@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minestack AI Architect | Software Blueprint Generator</title>
+  <meta name="description"
+    content="Minestack AI Architect — bangun blueprint software lengkap dari sebuah ide. PRD, Tech Stack, Architecture, Database, API, dan Deployment secara otomatis.">
+
+  <!-- Design System CSS -->
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Highlight.js Theme for Code Syntax Highlighting -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- External Libraries: Marked.js, Mermaid.js, Highlight.js, JSZip -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+  <!-- Pre-loaded Sample Data & Application Logic -->
+  <script src="sample_data.js"></script>
+</head>
+
+<body class="auth-locked">
+
+  <!-- ===================================================================
+       AUTH GATE (Login / Register) — tampil di depan sebelum app
+       =================================================================== -->
+  <div id="authGate" class="auth-gate" aria-live="polite">
+    <div class="auth-shell">
+      <div class="auth-brand">
+        <div class="auth-logo">
+          <i data-lucide="layers" style="width: 22px; height: 22px; color: #fff;"></i>
+        </div>
+        <div>
+          <div class="auth-brand-name">Minestack <span>AI Architect</span></div>
+          <div class="auth-brand-tag">Software Blueprint Generator</div>
+        </div>
+      </div>
+
+      <div class="auth-card">
+        <div class="auth-tabs">
+          <button type="button" class="auth-tab active" id="authTabLogin" data-auth-tab="login">Masuk</button>
+          <button type="button" class="auth-tab" id="authTabRegister" data-auth-tab="register">Daftar Baru</button>
+        </div>
+
+        <!-- LOGIN -->
+        <form id="authLoginForm" class="auth-form" autocomplete="on">
+          <h2 class="auth-title">Masuk ke Minestack</h2>
+          <p class="auth-desc">Gunakan akun admin atau akun yang sudah Anda daftarkan.</p>
+
+          <div class="form-group">
+            <label class="form-label" for="loginEmail">Email</label>
+            <input class="form-input" type="email" id="loginEmail" name="email" placeholder="nama@email.com" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="loginPassword">Password</label>
+            <div class="auth-pass-wrap">
+              <input class="form-input" type="password" id="loginPassword" name="password" placeholder="••••••••" required>
+              <button type="button" class="auth-eye-btn" id="loginTogglePass" title="Tampilkan password" aria-label="Tampilkan password">
+                <i data-lucide="eye" style="width: 16px; height: 16px;"></i>
+              </button>
+            </div>
+          </div>
+
+          <div id="loginError" class="auth-error" style="display:none;"></div>
+
+          <button type="submit" class="btn-primary auth-submit" id="loginSubmitBtn">
+            <i data-lucide="log-in" style="width: 16px; height: 16px;"></i>
+            Masuk
+          </button>
+          <p class="auth-switch-hint">Belum punya akun? <button type="button" class="auth-link-btn" id="goToRegisterBtn">Daftar baru</button></p>
+        </form>
+
+        <!-- REGISTER -->
+        <form id="authRegisterForm" class="auth-form" style="display:none;" autocomplete="on">
+          <h2 class="auth-title">Daftar Pengguna Baru</h2>
+          <p class="auth-desc">Buat akun untuk mengakses workspace blueprint Minestack.</p>
+
+          <div class="form-group">
+            <label class="form-label" for="regName">Nama lengkap</label>
+            <input class="form-input" type="text" id="regName" name="name" placeholder="Nama Anda" required minlength="2">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="regEmail">Email</label>
+            <input class="form-input" type="email" id="regEmail" name="email" placeholder="nama@email.com" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="regPassword">Password</label>
+            <div class="auth-pass-wrap">
+              <input class="form-input" type="password" id="regPassword" name="password" placeholder="Min. 6 karakter" required minlength="6">
+              <button type="button" class="auth-eye-btn" id="regTogglePass" title="Tampilkan password" aria-label="Tampilkan password">
+                <i data-lucide="eye" style="width: 16px; height: 16px;"></i>
+              </button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="regPassword2">Ulangi password</label>
+            <input class="form-input" type="password" id="regPassword2" name="password2" placeholder="Ulangi password" required minlength="6">
+          </div>
+
+          <div id="registerError" class="auth-error" style="display:none;"></div>
+          <div id="registerSuccess" class="auth-success" style="display:none;"></div>
+
+          <button type="submit" class="btn-primary auth-submit" id="registerSubmitBtn">
+            <i data-lucide="user-plus" style="width: 16px; height: 16px;"></i>
+            Buat Akun
+          </button>
+          <p class="auth-switch-hint">Sudah punya akun? <button type="button" class="auth-link-btn" id="goToLoginBtn">Masuk</button></p>
+        </form>
+      </div>
+
+      <p class="auth-footer-note">Minestack AI Architect · Blueprint software tanpa coding</p>
+    </div>
+  </div>
+
+  <!-- APP SHELL (hidden until authenticated) -->
+  <div id="appShell" class="app-shell" hidden>
+
+  <!-- Top Navigation Header -->
+  <header class="top-header">
+    <div class="brand-container" id="navBrandBtn" style="cursor: pointer;">
+      <div class="brand-logo"
+        style="background: linear-gradient(135deg, #8b5cf6, #f97316); display: flex; align-items: center; justify-content: center; border-radius: var(--radius-sm); width: 28px; height: 28px; box-shadow: 0 0 10px rgba(139, 92, 246, 0.4);">
+        <i data-lucide="layers" style="width: 14px; height: 14px; color: #ffffff;"></i>
+      </div>
+      <span class="brand-text">Minestack
+        <span class="brand-accent">AI Architect</span></span>
+    </div>
+
+    <nav class="nav-links">
+      <button class="nav-link-btn active" id="navLinkArchitect">AI Architect</button>
+      <button class="nav-link-btn" id="navLinkTier">Tier & Limit</button>
+      <button class="nav-link-btn" id="navLinkDocs">Dokumentasi</button>
+      <button class="nav-link-btn" id="navLinkCatalog">Katalog Model</button>
+      <button class="nav-link-btn" id="navLinkBlog">Blog</button>
+    </nav>
+
+    <div class="header-right">
+      <div class="user-profile">
+        <i data-lucide="user" style="width: 14px; height: 14px;"></i>
+        <span id="hdrUserEmail">—</span>
+        <span class="user-role-badge" id="hdrUserRole" style="display:none;">admin</span>
+      </div>
+      <button class="btn-primary" id="hdrDashboardBtn">
+        <i data-lucide="layout-dashboard" style="width: 15px; height: 15px;"></i>
+        Dashboard
+      </button>
+      <button class="btn-outline" id="hdrLogoutBtn" type="button">Keluar</button>
+    </div>
+  </header>
+
+  <!-- Main Application Wrapper -->
+  <div class="app-container">
+
+    <!-- Outer Left Icon Sidebar -->
+    <aside class="outer-sidebar">
+      <button class="sidebar-icon-btn" id="sbDashBtn" title="Dashboard">
+        <i data-lucide="grid" style="width: 20px; height: 20px;"></i>
+      </button>
+      <button class="sidebar-icon-btn" id="sbSignalsBtn" title="Signals">
+        <i data-lucide="radio" style="width: 20px; height: 20px;"></i>
+      </button>
+      <button class="sidebar-icon-btn" id="sbKeysBtn" title="API Keys">
+        <i data-lucide="key" style="width: 20px; height: 20px;"></i>
+      </button>
+
+      <div class="sidebar-divider"></div>
+
+      <button class="sidebar-icon-btn active" id="sbArchitectBtn" title="AI Architect Workspace">
+        <i data-lucide="infinity" style="width: 22px; height: 22px;"></i>
+      </button>
+
+      <div class="sidebar-divider"></div>
+
+      <button class="sidebar-icon-btn" id="sbMetricsBtn" title="Metrics">
+        <i data-lucide="bar-chart-2" style="width: 20px; height: 20px;"></i>
+      </button>
+      <button class="sidebar-icon-btn" id="sbZapBtn" title="Integrations">
+        <i data-lucide="zap" style="width: 20px; height: 20px;"></i>
+      </button>
+      <button class="sidebar-icon-btn" id="sbBillingBtn" title="Billing & Wallet">
+        <i data-lucide="wallet" style="width: 20px; height: 20px;"></i>
+      </button>
+
+      <div style="margin-top: auto;"></div>
+
+      <button class="sidebar-icon-btn" id="sbSupportBtn" title="Bantuan">
+        <i data-lucide="headphone-off" style="width: 20px; height: 20px;"></i>
+      </button>
+    </aside>
+
+    <!-- Main Workspace Canvas Area -->
+    <main class="main-canvas">
+
+      <!-- ===================================================================
+           VIEW 1: LANDING PAGE
+           =================================================================== -->
+      <section class="view-container active" id="viewLanding">
+        <div class="landing-hero">
+          <div class="badge-capsule">
+            <i data-lucide="sparkles" style="width: 14px; height: 14px; color: var(--accent-green);"></i>
+            MINESTACK AI WORKSPACE
+          </div>
+          <h1 class="hero-title">Software Blueprint.<br>Dibangun tanpa coding.</h1>
+          <p class="hero-subtitle">
+            Minestack AI Architect merancang fondasi sistem lengkap dari ide Anda —
+            PRD, tech stack, arsitektur, database, API, dan deployment dalam satu workspace.
+          </p>
+          <div class="hero-actions">
+            <button class="btn-primary" id="heroStartBtn">
+              Mulai Rancang Sekarang
+              <i data-lucide="arrow-right" style="width: 18px; height: 18px;"></i>
+            </button>
+            <button class="btn-outline" id="heroViewDashboardBtn">
+              Lihat Dashboard
+            </button>
+          </div>
+        </div>
+
+        <div class="landing-features">
+          <div class="section-header">
+            <div class="section-tag">APA YANG ANDA DAPATKAN</div>
+            <h2 class="section-title">Satu Ide. Enam Dokumen Produksi.</h2>
+          </div>
+
+          <div class="features-grid">
+            <div class="feature-card">
+              <div class="feature-icon-box"><i data-lucide="code-2" style="width: 22px; height: 22px;"></i></div>
+              <h3 class="feature-card-title">Tech Stack</h3>
+              <p class="feature-card-desc">Rekomendasi kerangka kerja (framework), bahasa pemrograman, dan infrastruktur
+                paling ideal berdasarkan kebutuhan skalabilitas ide Anda.</p>
+            </div>
+
+            <div class="feature-card">
+              <div class="feature-icon-box"><i data-lucide="file-text" style="width: 22px; height: 22px;"></i></div>
+              <h3 class="feature-card-title">Product Requirements (PRD)</h3>
+              <p class="feature-card-desc">Dokumen lengkap yang mendefinisikan persona pengguna, fitur utama, metrik
+                kesuksesan, dan batas ruang lingkup (scope) proyek.</p>
+            </div>
+
+            <div class="feature-card">
+              <div class="feature-icon-box"><i data-lucide="box" style="width: 22px; height: 22px;"></i></div>
+              <h3 class="feature-card-title">System Architecture</h3>
+              <p class="feature-card-desc">Panduan arsitektur sistem tingkat tinggi (High-Level Design) yang menjelaskan
+                bagaimana setiap komponen dan servis saling berkomunikasi.</p>
+            </div>
+
+            <div class="feature-card">
+              <div class="feature-icon-box"><i data-lucide="database" style="width: 22px; height: 22px;"></i></div>
+              <h3 class="feature-card-title">Database Schema</h3>
+              <p class="feature-card-desc">Rancangan struktur tabel relasional (SQL) atau dokumen (NoSQL) yang
+                dinormalisasi untuk menyimpan entitas bisnis Anda.</p>
+            </div>
+
+            <div class="feature-card">
+              <div class="feature-icon-box"><i data-lucide="globe" style="width: 22px; height: 22px;"></i></div>
+              <h3 class="feature-card-title">API Contracts</h3>
+              <p class="feature-card-desc">Dokumentasi spesifikasi endpoint REST API lengkap dengan metode, parameter,
+                payload JSON, dan struktur respons yang diharapkan.</p>
+            </div>
+
+            <div class="feature-card">
+              <div class="feature-icon-box"><i data-lucide="rocket" style="width: 22px; height: 22px;"></i></div>
+              <h3 class="feature-card-title">Deployment Guide</h3>
+              <p class="feature-card-desc">Panduan langkah-demi-langkah untuk melakukan deployment aplikasi ke cloud
+                (Vercel, AWS, dll) lengkap dengan script CI/CD.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           VIEW 2: DASHBOARD
+           =================================================================== -->
+      <section class="view-container" id="viewDashboard">
+        <div class="dashboard-container">
+          <div class="dashboard-header">
+            <div class="dashboard-title-group">
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                <i data-lucide="infinity" style="width: 28px; height: 28px; color: var(--accent-green);"></i>
+                <h1>AI Architect</h1>
+              </div>
+              <p>Bangun blueprint software lengkap dari sebuah ide.</p>
+            </div>
+            <button class="btn-primary" id="dashNewProjectBtn" style="padding: 10px 20px; font-size: 0.95rem;">
+              <i data-lucide="plus" style="width: 18px; height: 18px;"></i>
+              Project Baru
+            </button>
+          </div>
+
+          <!-- Projects List Grid -->
+          <div class="projects-grid" id="projectsGridContainer">
+            <!-- Project Cards populated dynamically via app.js -->
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           VIEW 3: WORKSPACE BLUEPRINT VIEWER
+           =================================================================== -->
+      <section class="view-container" id="viewWorkspace">
+        <div class="workspace-container">
+
+          <!-- Inner Left Project File Explorer Sidebar -->
+          <aside class="inner-sidebar">
+            <div class="project-breadcrumb">
+              <div class="breadcrumb-back" id="wsBackToDashBtn">
+                <i data-lucide="arrow-left" style="width: 14px; height: 14px;"></i>
+                <span>Kembali ke Dashboard</span>
+              </div>
+              <div class="project-name-heading" id="wsProjectNameHeading">bank</div>
+              <div style="color: var(--text-dim); font-size: 0.78rem; margin-top: 2px;">Workspace Blueprint</div>
+            </div>
+
+            <!-- Documents Navigation List -->
+            <div class="doc-nav-list" id="wsDocNavList">
+              <!-- Dynamically rendered document items -->
+            </div>
+          </aside>
+
+          <!-- Main Document Workspace Panel -->
+          <div class="workspace-content">
+
+            <!-- Document Top Toolbar -->
+            <div class="doc-toolbar">
+              <div class="toolbar-left">
+                <div class="doc-title" id="wsDocTitleDisplay">Database</div>
+                <select class="version-select" id="wsVersionSelect">
+                  <option value="v1">v1 (Latest)</option>
+                </select>
+              </div>
+
+              <div style="display: flex; align-items: center; gap: 16px;">
+                <!-- View Mode Tabs (Render, Markdown Mentah, Bandingkan Diff) -->
+                <div class="view-mode-tabs">
+                  <button class="view-mode-btn active" data-mode="render" id="vmBtnRender">
+                    <i data-lucide="eye" style="width: 14px; height: 14px; display: inline; margin-right: 4px;"></i>
+                    Render
+                  </button>
+                  <button class="view-mode-btn" data-mode="raw" id="vmBtnRaw">
+                    <i data-lucide="code" style="width: 14px; height: 14px; display: inline; margin-right: 4px;"></i>
+                    Markdown Mentah
+                  </button>
+                  <button class="view-mode-btn" data-mode="diff" id="vmBtnDiff">
+                    <i data-lucide="git-compare"
+                      style="width: 14px; height: 14px; display: inline; margin-right: 4px;"></i>
+                    Bandingkan Diff
+                  </button>
+                </div>
+
+                <!-- Regenerate current / all docs with integrated AI -->
+                <button class="btn-outline" id="wsRegenerateDocBtn" title="Generate ulang dokumen aktif dengan AI"
+                  style="color: #f59e0b; border-color: rgba(245, 158, 11, 0.35); background: rgba(245, 158, 11, 0.08); gap: 6px;">
+                  <i data-lucide="refresh-cw" style="width: 16px; height: 16px;"></i>
+                  Generate AI
+                </button>
+
+                <!-- Download ZIP Button -->
+                <button class="btn-zip" id="wsDownloadZipBtn">
+                  <i data-lucide="download" style="width: 16px; height: 16px;"></i>
+                  Download ZIP
+                </button>
+
+                <!-- AI Copilot Button -->
+                <button class="btn-outline" id="wsToggleCopilotBtn"
+                  style="color: var(--accent-green); border-color: rgba(16, 185, 129, 0.25); background: rgba(16, 185, 129, 0.05); gap: 6px;">
+                  <i data-lucide="sparkles" style="width: 16px; height: 16px;"></i>
+                  AI Copilot
+                </button>
+              </div>
+            </div>
+
+            <!-- Document Content Scroll Body -->
+            <div class="doc-body-scroll">
+
+              <!-- 1. Render Mode Display -->
+              <div id="modeRenderContainer" class="markdown-body-render">
+                <!-- Parsed markdown & Mermaid rendered diagrams -->
+              </div>
+
+              <!-- 2. Raw Markdown Editor Mode -->
+              <div id="modeRawContainer" style="display: none; height: 100%;">
+                <textarea class="raw-markdown-textarea" id="rawMarkdownEditor" spellcheck="false"></textarea>
+                <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 12px;">
+                  <button class="btn-outline" id="rawCopyBtn">
+                    <i data-lucide="copy" style="width: 14px; height: 14px;"></i> Copy Markdown
+                  </button>
+                  <button class="btn-primary" id="rawSaveBtn">
+                    <i data-lucide="save" style="width: 14px; height: 14px;"></i> Simpan Perubahan
+                  </button>
+                </div>
+              </div>
+
+              <!-- 3. Diff View Mode -->
+              <div id="modeDiffContainer" style="display: none;">
+                <div class="diff-container" id="diffContentBox">
+                  <!-- Diff comparison content -->
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+
+          <!-- 4. AI Copilot Chat Right Sidebar -->
+          <aside class="copilot-sidebar" id="wsCopilotSidebar" style="display: none;">
+            <div class="copilot-header">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="bot" style="width: 18px; height: 18px; color: var(--accent-green);"></i>
+                <span style="font-weight: 600;">AI Copilot Assistant</span>
+              </div>
+              <button class="copilot-close-btn" id="wsCopilotCloseBtn">&times;</button>
+            </div>
+
+            <div class="copilot-messages" id="wsCopilotMessages">
+              <div class="copilot-msg bot-msg">
+                Halo! Saya <strong>Minestack Copilot</strong> — panduan di dalam web ini saja.<br><br>
+                Saya bisa bantu jelaskan: <strong>Tech Stack</strong>, <strong>PRD</strong>, <strong>Architecture</strong>,
+                <strong>Database</strong>, <strong>API</strong>, <strong>Deployment</strong>, cara integrasi, dan cara pakai fitur workspace.
+                Saya juga bisa memperbaiki dokumen blueprint yang sedang aktif.<br><br>
+                <em>Di luar konteks Minestack / proyek blueprint: tidak saya jawab.</em><br><br>
+                Contoh: “Tech stack itu apa?”, “API.md isinya apa?”, “Cara integrasi frontend ke backend?”
+              </div>
+            </div>
+
+            <div class="copilot-input-area">
+              <textarea class="copilot-textarea" id="wsCopilotInput"
+                placeholder="Contoh: Tech stack itu apa? | Cara integrasi API? | Tambahkan endpoint OTP di API.md"></textarea>
+              <button class="btn-primary" id="wsCopilotSendBtn"
+                style="padding: 8px 12px; border-radius: var(--radius-sm); font-size: 0.85rem; width: 100%; justify-content: center; margin-top: 8px;">
+                <i data-lucide="send" style="width: 14px; height: 14px; margin-right: 4px; display: inline-block;"></i>
+                Kirim ke AI
+              </button>
+            </div>
+          </aside>
+
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           VIEW 4: API SETTINGS (KEYS)
+           =================================================================== -->
+      <section class="view-container" id="viewKeys">
+        <div class="dashboard-container" style="max-width: 800px;">
+          <div class="dashboard-header">
+            <div class="dashboard-title-group">
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                <i data-lucide="key" style="width: 28px; height: 28px; color: var(--accent-green);"></i>
+                <h1>API Keys & Model Settings</h1>
+              </div>
+              <p>Konfigurasi koneksi AI. Di production (Vercel), secret hanya di Environment Variables.</p>
+            </div>
+          </div>
+
+          <div id="cfgSecureModeHint" class="settings-card" style="display: none; border-color: rgba(16, 185, 129, 0.35); margin-bottom: 16px;">
+            <div style="display: flex; gap: 12px; align-items: flex-start;">
+              <i data-lucide="shield-check" style="width: 22px; height: 22px; color: var(--accent-green); flex-shrink: 0; margin-top: 2px;"></i>
+              <div>
+                <h3 style="margin: 0 0 6px; font-size: 0.95rem;">Secure Mode (Vercel)</h3>
+                <p style="margin: 0; font-size: 0.82rem; color: var(--text-muted); line-height: 1.45;">
+                  <code>AI_API_KEY</code>, <code>ADMIN_EMAIL</code>, dan <code>ADMIN_PASSWORD</code> disimpan di
+                  <strong>Vercel → Project → Settings → Environment Variables</strong> — tidak ada di frontend/GitHub.
+                  Browser hanya memanggil <code>/api/ai</code> dengan session login.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <div class="form-group">
+              <label class="form-label">BASE URL</label>
+              <input type="text" class="form-input" id="cfgBaseUrl" value="/api/ai" placeholder="/api/ai atau https://...">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">API KEY</label>
+              <div style="position: relative; display: flex; align-items: center;">
+                <input type="password" class="form-input" id="cfgApiKey"
+                  value="" placeholder="Local only — production: Vercel Env AI_API_KEY" style="padding-right: 48px;" autocomplete="off">
+                <button id="toggleApiKeyVisible" type="button"
+                  style="position: absolute; right: 16px; color: var(--text-dim); background: none; border: none; cursor: pointer;">
+                  <i data-lucide="eye" style="width: 18px; height: 18px;"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">MODEL ID</label>
+              <input type="text" class="form-input" id="cfgModel" value="combo1" placeholder="combo1">
+              <span style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px; display: block; line-height: 1.35;">
+                Default server: <code>combo1</code> (env <code>AI_MODEL</code>).
+                Local XAMPP: isi Base URL + API Key, buka lewat
+                <code>http://localhost/PRD%20EDITOR/</code>. Production: cukup login + model.
+              </span>
+            </div>
+
+            <div
+              style="display: flex; align-items: center; justify-content: space-between; margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border-color); flex-wrap: wrap; gap: 12px;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <button class="btn-outline" id="btnTestConnection">
+                  <i data-lucide="activity" style="width: 16px; height: 16px;"></i>
+                  Uji Koneksi AI
+                </button>
+                <span id="connStatusBadge" class="connection-badge status-disconnected">Not Tested</span>
+              </div>
+              <button class="btn-primary" id="btnSaveConfig">
+                <i data-lucide="save" style="width: 16px; height: 16px;"></i>
+                Simpan Konfigurasi
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           VIEW 5: SIGNALS & LOG MONITOR
+           =================================================================== -->
+      <section class="view-container" id="viewSignals">
+        <div class="dashboard-container">
+          <div class="dashboard-header">
+            <div class="dashboard-title-group">
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                <i data-lucide="radio" style="width: 28px; height: 28px; color: var(--accent-green);"></i>
+                <h1>Live Signals & Console Logs</h1>
+              </div>
+              <p>Pantau request payload dan response stream dari AI Engine secara real-time.</p>
+            </div>
+            <button class="btn-outline" id="btnClearLogs">
+              <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+              Hapus Log
+            </button>
+          </div>
+
+          <div class="terminal-container">
+            <div class="terminal-header">
+              <div class="terminal-dots">
+                <span class="dot-red"></span>
+                <span class="dot-yellow"></span>
+                <span class="dot-green"></span>
+              </div>
+              <span class="terminal-title">minestack-ai-engine.log</span>
+            </div>
+            <div class="terminal-body" id="consoleLogsBody">
+              <div class="log-row info">[SYSTEM] Minestack AI Engine initialized. Base URL: https://siaptuan.my.id/v1</div>
+              <div class="log-row info">[SYSTEM] Model target configured: combo1</div>
+              <div class="log-row info">[SYSTEM] Waiting for blueprint generations or connection tests...</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           VIEW 6: USAGE METRICS
+           =================================================================== -->
+      <section class="view-container" id="viewMetrics">
+        <div class="dashboard-container">
+          <div class="dashboard-header">
+            <div class="dashboard-title-group">
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                <i data-lucide="bar-chart-2" style="width: 28px; height: 28px; color: var(--accent-green);"></i>
+                <h1>AI Engine Usage Metrics</h1>
+              </div>
+              <p>Statistik pemakaian token, total pemanggilan API, latensi rata-rata, dan estimasi biaya.</p>
+            </div>
+          </div>
+
+          <div class="metrics-summary-grid">
+            <div class="metric-card-stat">
+              <div class="stat-header">
+                <span class="stat-title">Total Permintaan</span>
+                <i data-lucide="server" style="width: 18px; height: 18px; color: var(--accent-green);"></i>
+              </div>
+              <div class="stat-value" id="statTotalRequests">0</div>
+              <div class="stat-sub">Permintaan generasi & chat</div>
+            </div>
+
+            <div class="metric-card-stat">
+              <div class="stat-header">
+                <span class="stat-title">Token Terpakai</span>
+                <i data-lucide="cpu" style="width: 18px; height: 18px; color: var(--accent-blue);"></i>
+              </div>
+              <div class="stat-value" id="statTotalTokens">0</div>
+              <div class="stat-sub">Prompt + Completion tokens</div>
+            </div>
+
+            <div class="metric-card-stat">
+              <div class="stat-header">
+                <span class="stat-title">Estimasi Biaya</span>
+                <i data-lucide="wallet" style="width: 18px; height: 18px; color: var(--accent-green);"></i>
+              </div>
+              <div class="stat-value" id="statTotalCost">$0.00</div>
+              <div class="stat-sub">Berdasarkan tarif token model</div>
+            </div>
+
+            <div class="metric-card-stat">
+              <div class="stat-header">
+                <span class="stat-title">Rata-rata Latensi</span>
+                <i data-lucide="clock" style="width: 18px; height: 18px; color: #f59e0b;"></i>
+              </div>
+              <div class="stat-value" id="statAvgLatency">0.0s</div>
+              <div class="stat-sub">Waktu respons API</div>
+            </div>
+          </div>
+
+          <div
+            style="margin-top: 32px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 24px;">
+            <h3 style="margin-bottom: 16px; font-size: 1.1rem;">Aktivitas Penggunaan Terakhir</h3>
+            <div style="overflow-x: auto;">
+              <table class="metrics-table" style="width: 100%; border-collapse: collapse; text-align: left;">
+                <thead>
+                  <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-dim); font-size: 0.82rem;">
+                    <th style="padding: 12px;">Waktu</th>
+                    <th style="padding: 12px;">Jenis Aktivitas</th>
+                    <th style="padding: 12px;">Model</th>
+                    <th style="padding: 12px;">Tokens</th>
+                    <th style="padding: 12px;">Latensi</th>
+                    <th style="padding: 12px;">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="metricsTableBody">
+                  <tr
+                    style="border-bottom: 1px solid var(--border-color); color: var(--text-muted); font-size: 0.88rem;">
+                    <td colspan="6" style="padding: 16px; text-align: center; color: var(--text-dim);">Belum ada log
+                      aktivitas pemakaian AI.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           VIEW 7: INTEGRATIONS
+           =================================================================== -->
+      <section class="view-container" id="viewIntegrations">
+        <div class="dashboard-container" style="max-width: 800px;">
+          <div class="dashboard-header">
+            <div class="dashboard-title-group">
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                <i data-lucide="zap" style="width: 28px; height: 28px; color: var(--accent-green);"></i>
+                <h1>Integrasi Pihak Ketiga</h1>
+              </div>
+              <p>Sambungkan Minestack AI Architect dengan tool pengembangan favorit Anda.</p>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 20px;">
+            <div class="settings-card flex-row"
+              style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-card); padding: 24px; border: 1px solid var(--border-color); border-radius: var(--radius-lg);">
+              <div>
+                <h3 style="font-size: 1.1rem; margin-bottom: 4px;">GitHub Repository Sync</h3>
+                <p style="color: var(--text-muted); font-size: 0.88rem;">Sinkronisasikan setiap perubahan blueprint
+                  langsung ke repositori Git Anda sebagai markdown commit.</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="syncGithubCheck">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="settings-card flex-row"
+              style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-card); padding: 24px; border: 1px solid var(--border-color); border-radius: var(--radius-lg);">
+              <div>
+                <h3 style="font-size: 1.1rem; margin-bottom: 4px;">Vercel Deployment Deployer</h3>
+                <p style="color: var(--text-muted); font-size: 0.88rem;">Secara otomatis memicu deployment web app di
+                  Vercel menggunakan rekomendasi deployment guide terbaru.</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="syncVercelCheck">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="settings-card flex-row"
+              style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-card); padding: 24px; border: 1px solid var(--border-color); border-radius: var(--radius-lg);">
+              <div>
+                <h3 style="font-size: 1.1rem; margin-bottom: 4px;">Slack Webhook Alerts</h3>
+                <p style="color: var(--text-muted); font-size: 0.88rem;">Kirimkan laporan rangkuman spesifikasi dan log
+                  perubahan secara otomatis ke channel Slack tim Anda.</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="syncSlackCheck">
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           VIEW 8: BILLING & LIMITS
+           =================================================================== -->
+      <section class="view-container" id="viewBilling">
+        <div class="dashboard-container" style="max-width: 800px;">
+          <div class="dashboard-header">
+            <div class="dashboard-title-group">
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                <i data-lucide="wallet" style="width: 28px; height: 28px; color: var(--accent-green);"></i>
+                <h1>Tier & Limit Pelanggan</h1>
+              </div>
+              <p>Rincian paket langganan Anda, kuota token, dan tagihan aktif.</p>
+            </div>
+          </div>
+
+          <div class="settings-card"
+            style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 32px;">
+            <div
+              style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--border-color);">
+              <div>
+                <span class="badge-capsule"
+                  style="background: rgba(16, 185, 129, 0.15); color: var(--accent-green); border-color: rgba(16, 185, 129, 0.3); margin: 0 0 8px 0;">PORTAL
+                  ENTERPRISE</span>
+                <h3 style="font-size: 1.5rem;">Minestack AI Pro</h3>
+              </div>
+              <div style="text-align: right;">
+                <span style="font-size: 1.8rem; font-weight: 800; color: #ffffff;">$49</span>
+                <span style="color: var(--text-dim); font-size: 0.85rem;">/ bulan</span>
+              </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.88rem; margin-bottom: 6px;">
+                  <span style="color: var(--text-muted);">Kuota Bulanan AI Blueprint</span>
+                  <span style="font-weight: 600;">Unlimited</span>
+                </div>
+                <div
+                  style="width: 100%; height: 6px; background: rgba(255, 255, 255, 0.05); border-radius: 3px; overflow: hidden;">
+                  <div style="width: 100%; height: 100%; background: var(--accent-green);"></div>
+                </div>
+              </div>
+
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.88rem; margin-bottom: 6px;">
+                  <span style="color: var(--text-muted);">Masa Berlaku Langganan</span>
+                  <span style="font-weight: 600; color: #ffffff;">Aktif (Perpanjangan otomatis: 20 Agustus 2026)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           VIEW 9: SUPPORT & DOCUMENTATION
+           =================================================================== -->
+      <section class="view-container" id="viewSupport">
+        <div class="dashboard-container" style="max-width: 800px;">
+          <div class="dashboard-header">
+            <div class="dashboard-title-group">
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                <i data-lucide="headphone-off" style="width: 28px; height: 28px; color: var(--accent-green);"></i>
+                <h1>Pusat Bantuan & Panduan</h1>
+              </div>
+              <p>Temukan solusi cepat dan dokumentasi cara kerja Minestack AI Architect.</p>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 16px;">
+            <div class="settings-card"
+              style="padding: 24px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg);">
+              <h3 style="font-size: 1.05rem; margin-bottom: 8px;">Bagaimana cara mengganti API Key dan URL AI?</h3>
+              <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.5;">Anda dapat pergi ke tab
+                <strong>API Keys</strong> di sidebar kiri (ikon kunci). Di sana, masukkan Base URL, API Key, dan ID
+                model (contoh: <code>combo1</code>) yang Anda miliki lalu klik "Simpan Konfigurasi". Koneksi baru Anda
+                akan langsung digunakan secara real-time.
+              </p>
+            </div>
+
+            <div class="settings-card"
+              style="padding: 24px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg);">
+              <h3 style="font-size: 1.05rem; margin-bottom: 8px;">Bagaimana cara mendownload seluruh dokumen
+                spesifikasi?</h3>
+              <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.5;">Saat Anda membuka detail proyek
+                di Workspace, klik tombol <strong>Download ZIP</strong> yang terletak di sudut kanan atas toolbar.
+                Seluruh 6 dokumen markdown akan dikemas dalam format <code>.zip</code> dan diunduh langsung ke komputer
+                Anda.</p>
+            </div>
+
+            <div class="settings-card"
+              style="padding: 24px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg);">
+              <h3 style="font-size: 1.05rem; margin-bottom: 8px;">Format diagram apa yang didukung di visualizer?</h3>
+              <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.5;">Minestack AI Architect menggunakan
+                parser <strong>Mermaid.js</strong> yang mendukung diagram berbasis teks. Anda dapat menulis diagram
+                relasi database (ERD), diagram alir sistem, dan diagram arsitektur tingkat tinggi langsung menggunakan
+                tag <code>```mermaid ... ```</code> di mode edit teks mentah.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Modal: New Project Generator -->
+  <div class="modal-overlay" id="modalNewProject">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Buat Blueprint Software Baru</h3>
+        <button class="modal-close-btn" id="modalCloseBtn">&times;</button>
+      </div>
+
+      <div id="modalFormBody">
+        <div class="form-group">
+          <label class="form-label">Nama Proyek / Aplikasi</label>
+          <input type="text" class="form-input" id="inputProjName" placeholder="Contoh: bank, e-commerce, hris-system">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Ceritakan Ide Aplikasi Anda</label>
+          <textarea class="form-textarea" id="inputProjPrompt"
+            placeholder="Jelaskan kebutuhan aplikasi, alur bisnis utama, alur pembayaran, atau fitur khusus lainnya yang ingin Anda buat..."></textarea>
+        </div>
+
+        <!-- Tech Stack Selection → AI engine detail 6 dokumen -->
+        <div
+          style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2); padding: 10px 12px; border-radius: var(--radius-sm); display: flex; gap: 10px; align-items: flex-start; margin-bottom: 4px;">
+          <i data-lucide="sparkles"
+            style="width: 18px; height: 18px; color: var(--accent-green); flex-shrink: 0; margin-top: 2px;"></i>
+          <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.4;">
+            Pilih <strong>tech stack</strong>, lalu klik <strong>Buat Blueprint dengan AI</strong>.
+            AI engine mendetailkan 6 dokumen: PRD, Tech Stack, Architecture, Database, API, Deployment.
+          </p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 8px;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label">Frontend</label>
+            <select class="form-select" id="inputProjFrontendMain" style="padding: 8px 12px;">
+              <option value="React + Next.js">React + Next.js (TypeScript)</option>
+              <option value="Vue + Nuxt.js">Vue + Nuxt.js</option>
+              <option value="Angular">Angular (Standalone)</option>
+              <option value="Svelte + SvelteKit">Svelte + SvelteKit</option>
+              <option value="React + Vite">React + Vite (SPA)</option>
+              <option value="Laravel Blade">Laravel Blade (Monolith)</option>
+              <option value="HTML + Alpine.js">HTML + Alpine.js (Minimal)</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label">Backend</label>
+            <select class="form-select" id="inputProjBackendMain" style="padding: 8px 12px;">
+              <option value="Node.js + Express">Node.js + Express / NestJS</option>
+              <option value="Go + Fiber">Go + Fiber / Gin</option>
+              <option value="Python + FastAPI">Python + FastAPI / Django</option>
+              <option value="PHP + Laravel">PHP + Laravel</option>
+              <option value="Ruby on Rails">Ruby on Rails</option>
+              <option value="Java Spring Boot">Java Spring Boot</option>
+              <option value="Rust + Actix">Rust + Actix-Web</option>
+              <option value="Google Apps Script">Google Apps Script (code.gs)</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 10px;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label">Database</label>
+            <select class="form-select" id="inputProjDbEngineMain" style="padding: 8px 12px;">
+              <option value="PostgreSQL">PostgreSQL (Relational SQL)</option>
+              <option value="MySQL">MySQL (Relational SQL)</option>
+              <option value="MariaDB">MariaDB (Relational SQL)</option>
+              <option value="Google Sheet">Google Sheet (Spreadsheet DB)</option>
+              <option value="MongoDB">MongoDB (NoSQL Document)</option>
+              <option value="Redis">Redis (In-Memory Key-Value)</option>
+              <option value="SQLite">SQLite (Embedded Relational)</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label">DB Framework / ORM</label>
+            <select class="form-select" id="inputProjDbOrmMain" style="padding: 8px 12px;">
+              <option value="Prisma">Prisma ORM</option>
+              <option value="Drizzle">Drizzle ORM</option>
+              <option value="Mongoose">Mongoose ODM</option>
+              <option value="Sequelize">Sequelize ORM</option>
+              <option value="SQLAlchemy">SQLAlchemy ORM</option>
+              <option value="GORM">GORM (Go)</option>
+              <option value="None">Direct Driver / Tanpa ORM</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; flex-wrap: wrap;">
+          <button class="btn-outline" id="modalCancelBtn">Batal</button>
+          <button class="btn-primary" id="modalGenerateBtn">
+            <i data-lucide="sparkles" style="width: 16px; height: 16px;"></i>
+            Buat Blueprint dengan AI
+          </button>
+        </div>
+      </div>
+
+      <!-- AI Consultation & Recommendations Step (opsional) -->
+      <div id="modalConsultBody" style="display: none; flex-direction: column; gap: 14px;">
+        <div
+          style="background: rgba(139, 92, 246, 0.05); border: 1px solid rgba(139, 92, 246, 0.2); padding: 10px 12px; border-radius: var(--radius-sm); display: flex; gap: 10px; align-items: flex-start;">
+          <i data-lucide="sparkles"
+            style="width: 18px; height: 18px; color: var(--accent-green); flex-shrink: 0; margin-top: 2px;"></i>
+          <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.4;">
+            Langkah <strong>opsional</strong>: AI mendalami domain bisnis (proses, aktor, skema tabel)
+            dan merekomendasikan stack. Sesuaikan preferensi, lalu klik <strong>Buat Blueprint</strong>
+            — AI engine langsung mendetailkan 6 dokumen (PRD, Tech Stack, Architecture, Database, API, Deployment).
+          </p>
+        </div>
+
+        <!-- AI Enriched Scope Box -->
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <label class="form-label" style="font-size: 0.8rem; font-weight:600; color: #ffffff;">Analisis Domain & Ruang
+            Lingkup Sistem</label>
+          <div id="lblEnrichedScope"
+            style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.45; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); padding: 8px 12px; border-radius: var(--radius-sm); max-height: 180px; overflow-y: auto; white-space: pre-wrap;">
+            Mendalami definisi domain, proses bisnis, dan ruang lingkup...
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label">Rekomendasi Frontend</label>
+            <select class="form-select" id="inputProjFrontend" style="padding: 8px 12px;">
+              <option value="React + Next.js">React + Next.js (TypeScript)</option>
+              <option value="Vue + Nuxt.js">Vue + Nuxt.js</option>
+              <option value="Angular">Angular (Standalone)</option>
+              <option value="Svelte + SvelteKit">Svelte + SvelteKit</option>
+              <option value="React + Vite">React + Vite (SPA)</option>
+              <option value="Laravel Blade">Laravel Blade (Monolith)</option>
+              <option value="HTML + Alpine.js">HTML + Alpine.js (Minimal)</option>
+            </select>
+            <span id="lblFrontendJustify"
+              style="font-size: 0.75rem; color: var(--accent-green); margin-top: 4px; display: block; line-height: 1.3;">Menganalisis...</span>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label">Rekomendasi Backend</label>
+            <select class="form-select" id="inputProjBackend" style="padding: 8px 12px;">
+              <option value="Node.js + Express">Node.js + Express / NestJS</option>
+              <option value="Go + Fiber">Go + Fiber / Gin</option>
+              <option value="Python + FastAPI">Python + FastAPI / Django</option>
+              <option value="PHP + Laravel">PHP + Laravel</option>
+              <option value="Ruby on Rails">Ruby on Rails</option>
+              <option value="Java Spring Boot">Java Spring Boot</option>
+              <option value="Rust + Actix">Rust + Actix-Web</option>
+              <option value="Google Apps Script">Google Apps Script (code.gs)</option>
+            </select>
+            <span id="lblBackendJustify"
+              style="font-size: 0.75rem; color: var(--accent-green); margin-top: 4px; display: block; line-height: 1.3;">Menganalisis...</span>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label">Rekomendasi Database</label>
+            <select class="form-select" id="inputProjDbEngine" style="padding: 8px 12px;">
+              <option value="PostgreSQL">PostgreSQL (Relational SQL)</option>
+              <option value="MySQL">MySQL (Relational SQL)</option>
+              <option value="MariaDB">MariaDB (Relational SQL)</option>
+              <option value="Google Sheet">Google Sheet (Spreadsheet DB)</option>
+              <option value="MongoDB">MongoDB (NoSQL Document)</option>
+              <option value="Redis">Redis (In-Memory Key-Value)</option>
+              <option value="SQLite">SQLite (Embedded Relational)</option>
+            </select>
+            <span id="lblDbEngineJustify"
+              style="font-size: 0.75rem; color: var(--accent-green); margin-top: 4px; display: block; line-height: 1.3;">Menganalisis...</span>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label">DB Framework / ORM</label>
+            <select class="form-select" id="inputProjDbOrm" style="padding: 8px 12px;">
+              <option value="Prisma">Prisma ORM</option>
+              <option value="Drizzle">Drizzle ORM</option>
+              <option value="Mongoose">Mongoose ODM</option>
+              <option value="Sequelize">Sequelize ORM</option>
+              <option value="SQLAlchemy">SQLAlchemy ORM</option>
+              <option value="GORM">GORM (Go)</option>
+              <option value="None">Direct Driver / Tanpa ORM</option>
+            </select>
+            <span id="lblDbOrmJustify"
+              style="font-size: 0.75rem; color: var(--accent-green); margin-top: 4px; display: block; line-height: 1.3;">Menganalisis...</span>
+          </div>
+        </div>
+
+        <!-- Recommended Tables Box -->
+        <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 4px;">
+          <h4
+            style="font-size: 0.85rem; font-weight: 600; border-bottom: 1px solid var(--border-color); padding-bottom: 4px; color: #ffffff; display: flex; align-items: center; gap: 6px;">
+            <i data-lucide="table" style="width: 14px; height: 14px; color: var(--accent-green);"></i>
+            Rekomendasi Struktur Tabel & Kolom Utama
+          </h4>
+          <div id="containerRecommendedTables"
+            style="display: flex; flex-direction: column; gap: 6px; max-height: 100px; overflow-y: auto; padding-right: 4px;">
+            <div style="text-align: center; color: var(--text-dim); font-size: 0.8rem; padding: 8px 0;">Menganalisis
+              skema tabel...</div>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 4px;">
+          <h4
+            style="font-size: 0.88rem; font-weight: 600; border-bottom: 1px solid var(--border-color); padding-bottom: 4px; color: #ffffff; display: flex; align-items: center; gap: 6px;">
+            <i data-lucide="help-circle" style="width: 14px; height: 14px; color: var(--accent-green);"></i>
+            Clarifying Questions (Klarifikasi Desain Database)
+          </h4>
+
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" id="lblQuestion1"
+              style="font-size: 0.8rem; margin-bottom: 4px; color: #ffffff;">Pertanyaan 1</label>
+            <input type="text" class="form-input" id="inputAnswer1" placeholder="Jawaban Anda..."
+              style="padding: 8px 12px; font-size: 0.85rem;">
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" id="lblQuestion2"
+              style="font-size: 0.8rem; margin-bottom: 4px; color: #ffffff;">Pertanyaan 2</label>
+            <input type="text" class="form-input" id="inputAnswer2" placeholder="Jawaban Anda..."
+              style="padding: 8px 12px; font-size: 0.85rem;">
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" id="lblQuestion3"
+              style="font-size: 0.8rem; margin-bottom: 4px; color: #ffffff;">Pertanyaan 3</label>
+            <input type="text" class="form-input" id="inputAnswer3" placeholder="Jawaban Anda..."
+              style="padding: 8px 12px; font-size: 0.85rem;">
+          </div>
+        </div>
+
+        <div
+          style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border-color);">
+          <button class="btn-outline" id="modalConsultBackBtn"
+            style="padding: 6px 12px; font-size: 0.85rem;">Kembali</button>
+          <button class="btn-outline" id="modalConsultSkipBtn"
+            style="padding: 6px 12px; font-size: 0.85rem; color: var(--text-muted);">Gunakan Default</button>
+          <button class="btn-primary" id="modalConsultSubmitBtn" style="padding: 6px 16px; font-size: 0.85rem;">
+            <i data-lucide="file-plus" style="width: 14px; height: 14px;"></i>
+            Buat Blueprint
+          </button>
+        </div>
+      </div>
+
+      <!-- Generation Progress State -->
+      <div class="generation-progress-box" id="modalProgressBody">
+        <div class="spinner-ring"></div>
+        <div class="progress-status-text" id="genStatusText">Menganalisis Spesifikasi Ide...</div>
+        <div class="progress-subtext" id="genSubText">Membuat 6 Dokumen Produksi (PRD, Tech Stack, Architecture, DB,
+          API, Deployment)</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Floating Customer Support Widget -->
+  <div class="cs-widget" id="floatingCsWidget">
+    <div class="cs-icon-bubble" style="background: var(--accent-green); box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);">
+      <i data-lucide="bot" style="width: 16px; height: 16px; color: #fff;"></i>
+    </div>
+    <div class="cs-text-group">
+      <span class="cs-sub">Asisten AI Aktif</span>
+      <span class="cs-main">Tanya Copilot Kami</span>
+    </div>
+  </div>
+
+  </div><!-- /#appShell -->
+
+  <!-- Main Application Script -->
+  <script src="app.js"></script>
+
+  <script>
+    // Initialize Lucide icons on page load
+    document.addEventListener("DOMContentLoaded", () => {
+      if (window.lucide) lucide.createIcons();
+    });
+  </script>
+
+</body>
+
+</html>
