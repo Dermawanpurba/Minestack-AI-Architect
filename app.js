@@ -2656,6 +2656,24 @@ Gunakan resource name dari domain (work-orders, assets, ledger-entries, dll) —
     }
   }
 
+  async function checkAiConnectionPreflight() {
+    const baseUrl = (STATE.aiBaseUrl || "https://siaptuan.my.id/v1").replace(/\/+$/, "");
+    const model = (STATE.aiModel || "combo1").trim();
+    try {
+      const res = await performAiRequest(`${baseUrl}/chat/completions`, {
+        model: model,
+        messages: [{ role: "user", content: "ping" }],
+        max_tokens: 10,
+        temperature: 0
+      });
+      if (res && res.ok) return { ok: true };
+      const errText = res ? await res.text() : "empty response";
+      return { ok: false, status: res?.status || 500, error: errText };
+    } catch (err) {
+      return { ok: false, status: 0, error: err.message || String(err) };
+    }
+  }
+
   async function triggerDocumentGeneration(projectId, docKey, force = false) {
     const genKey = `${projectId}-${docKey}`;
     if (activeGenerations.has(genKey)) return;
@@ -2686,6 +2704,36 @@ Gunakan resource name dari domain (work-orders, assets, ledger-entries, dll) —
       renderDocumentNav();
       if (STATE.currentDocKey === docKey) showDocumentGeneratingState(docKey);
     }
+
+    // Pre-flight AI connection health check BEFORE running full generation
+    addLog("info", `Memeriksa koneksi API AI (${STATE.aiModel || "combo1"}) sebelum generate '${docKey}'...`);
+    const connCheck = await checkAiConnectionPreflight();
+    if (!connCheck.ok) {
+      const cleanErr = String(connCheck.error).slice(0, 300);
+      addLog("error", `Uji koneksi API AI gagal (HTTP ${connCheck.status || "?"}): ${cleanErr}`);
+      trackApiUsage(1, 0, 0, false);
+
+      alert(`⚠️ Uji Koneksi API AI Gagal (HTTP ${connCheck.status || "Connection Error"}):\n\nServer AI tidak merespons uji koneksi awal (ping test).\nDetail: ${cleanErr}\n\nGenerasi '${docKey}' dibatalkan. Periksa API Key / Base URL di Pengaturan.`);
+
+      const errMarkdown = `> [!CAUTION]
+> ### ⚠️ Uji Koneksi API AI Gagal (${docKey})
+> Generasi dokumen dibatalkan karena server API AI tidak merespons uji koneksi awal (*ping test*).
+>
+> **Detail Error**: \`HTTP ${connCheck.status || 'Network Error'}: ${cleanErr}\`
+>
+> #### Langkah Penyelesaian:
+> 1. Klik ikon **Pengaturan API (Kunci)** di sudut kanan atas untuk memeriksa **API Key** dan **Base URL**.
+> 2. Pastikan server API AI upstream (\`${STATE.aiBaseUrl}\`) dapat dijangkau dan online.
+> 3. Klik tombol di bawah ini untuk mencoba kembali:
+>
+> <button class="btn btn-primary" onclick="window.retryDocGeneration('${projectId}', '${docKey}')" style="margin-top: 12px; padding: 8px 18px; cursor: pointer; font-weight: 600;">⚡ Coba Uji Koneksi & Generate Ulang</button>`;
+
+      activeGenerations.delete(genKey);
+      applyGeneratedDocument(projectId, docKey, errMarkdown);
+      return;
+    }
+
+    addLog("success", `Uji koneksi API AI BERHASIL (HTTP 200). Memulai AI Thinking untuk '${docKey}'...`);
 
     addLog("info", `AI generation started for: ${docKey} (Project: "${project.name}")`);
 
