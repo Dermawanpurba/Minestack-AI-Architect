@@ -1708,12 +1708,72 @@
     const combined = `${cat} ${idea}`;
     const arch = (forcedArchetype || "AUTO").toUpperCase();
 
-    // 0. B2B Heavy Equipment Sparepart & Suku Cadang E-Commerce Archetype
+    // 0. Financial Accounting & Payroll Management (Pencatatan Keuangan, Gaji & Pengeluaran) Archetype
+    if (
+      arch === "FINANCE" || arch === "PAYROLL" ||
+      (arch === "AUTO" && (
+        combined.includes("gaji") || combined.includes("payroll") || combined.includes("pengeluaran") ||
+        combined.includes("keuangan") || combined.includes("pencatatan keuangan") || combined.includes("laporan keuangan") ||
+        combined.includes("cost") || combined.includes("cashflow") || combined.includes("slip gaji") ||
+        combined.includes("beban") || combined.includes("pemasukan") || combined.includes("anggaran")
+      ))
+    ) {
+      return {
+        category: "Pencatatan Keuangan & Pengeluaran Gaji (Financial & Payroll)",
+        domainDefinition: "Platform pencatatan keuangan digital terintegrasi untuk pengelolaan laporan keuangan, penggajian (payroll), alokasi pengeluaran operasional (cost breakdown), perbandingan bulanan, serta analisis grafik tren keuangan tahunan.",
+        coreProcesses: [
+          "Pencatatan Pemasukan & Pengeluaran Operasional",
+          "Pengelolaan Gaji Karyawan & Slip Gaji (Payroll)",
+          "Pengelompokan Cost / Beban Pengeluaran (Category Expense)",
+          "Rekonsiliasi Arus Kas (Cashflow & Double-Entry Ledger)",
+          "Dashboard Analitik & Grafik Keuangan Tahunan",
+          "Laporan Perbandingan Keuangan Bulanan & Ekspor PDF/Excel"
+        ],
+        frontend: "React + Next.js",
+        frontendWhy: "Cocok untuk dashboard keuangan interaktif, rendering grafik tahunan, dan ekspor laporan.",
+        backend: "Node.js + Express",
+        backendWhy: "Efisien mengelola kalkulasi payroll, transaksi keuangan, dan API laporan.",
+        db: "PostgreSQL",
+        dbWhy: "Integritas data relasional tinggi (ACID) untuk pencatatan transaksi keuangan & buku besar.",
+        orm: "Prisma",
+        ormWhy: "Type-safe schema untuk relasi karyawan-gaji-kategori_pengeluaran-laporan.",
+        scope: "Platform Pencatatan Keuangan & Gaji multi-role (Staf Keuangan/Finance, HR/Payroll Admin, Manajer/Direktur, Auditor) yang mengintegrasikan pengisian & approval pengeluaran, pengelompokan cost center, perhitungan gaji, grafik tren tahunan, perbandingan bulanan, dan jejak audit transaksi.",
+        rolesMarkdown: `* **Staf Finance / Akuntan**: Menginput transaksi pengeluaran, mengelompokkan biaya, dan melakukan verifikasi nota.
+* **Admin HR / Payroll**: Mengelola komponen gaji karyawan, potongan, tunjangan, dan menerbitkan slip gaji.
+* **Manajer / Direktur**: Memantau dashboard grafik tahunan, evaluasi perbandingan bulanan, dan approval pengeluaran besar.
+* **Auditor / Internal Control**: Memeriksa kelengkapan bukti transaksi dan jejak audit pengeluaran.`,
+        userStoriesMarkdown: `* Sebagai **Staf Finance**, saya ingin mencatat pengeluaran operasional beserta kategorinya agar alokasi biaya terpantau dengan jelas.
+* Sebagai **Admin Payroll**, saya ingin memproses penggajian bulanan agar distribusi gaji tepat waktu dan tercatat di laporan keuangan.
+* Sebagai **Direktur**, saya ingin melihat grafik tren tahunan dan perbandingan bulanan agar dapat mengevaluasi efisiensi pengeluaran perusahaan.`,
+        kpiMarkdown: `* Akurasi Perhitungan Payroll & Pengeluaran = 100%.
+* Waktu Penyusunan Laporan Bulanan < 1 hari kerja.
+* Waktu Muat Dashboard Grafik Keuangan < 1.5 detik.`,
+        tables: [
+          { name: "users", columns: "id, email, password_hash, role, full_name, status, created_at", description: "Pengguna sistem (Finance, HR, Direktur, Auditor)." },
+          { name: "expense_categories", columns: "id, code, name, type, description", description: "Kategori pengeluaran & cost center (Gaji, Operasional, Maintenance, dll.)." },
+          { name: "employees", columns: "id, nik, full_name, department, base_salary, status", description: "Master data karyawan & gaji pokok." },
+          { name: "payroll_runs", columns: "id, period_month, period_year, total_disbursed, status, processed_at", description: "Batch pemrosesan gaji bulanan." },
+          { name: "payslips", columns: "id, payroll_run_id, employee_id, base_salary, allowances, deductions, net_salary, payment_status", description: "Rincian slip gaji per karyawan." },
+          { name: "expenses", columns: "id, expense_no, category_id, amount, description, vendor_name, proof_file_url, status, created_by, created_at", description: "Catatan transaksi pengeluaran operasional." },
+          { name: "incomes", columns: "id, income_no, source_name, amount, description, date, created_at", description: "Catatan transaksi pemasukan dana." },
+          { name: "general_ledgers", columns: "id, ref_no, account_code, debit, credit, balance, transaction_date", description: "Jurnal umum / buku besar keuangan." },
+          { name: "monthly_budgets", columns: "id, category_id, period_month, period_year, allocated_amount, spent_amount", description: "Anggaran bulanan per kategori pengeluaran." },
+          { name: "financial_reports", columns: "id, report_type, period_month, period_year, total_income, total_expense, net_profit, file_url", description: "Ringkasan laporan keuangan periodik." },
+          { name: "audit_logs", columns: "id, actor_id, action, entity, entity_id, meta, created_at", description: "Jejak audit transaksi & perubahan gaji." }
+        ],
+        questions: [
+          "Apakah pengeluaran gaji dipisahkan per divisi/departemen?",
+          "Apakah perlu integrasi otomatis dengan rekening bank / internet banking?",
+          "Apakah ada approval berlapis untuk pengeluaran di atas nominal tertentu?"
+        ]
+      };
+    }
+
+    // 1. B2B Heavy Equipment Sparepart & Suku Cadang E-Commerce Archetype
     if (
       arch === "ECOMMERCE" ||
       (arch === "AUTO" && (
         combined.includes("sparepart") || combined.includes("spare part") || combined.includes("suku cadang") ||
-        combined.includes("jual") || combined.includes("jualan") || combined.includes("penjualan") ||
         combined.includes("caterpillar") || combined.includes("komatsu") || combined.includes("kobelco") ||
         combined.includes("hitachi") || combined.includes("volvo") || combined.includes("hino") ||
         combined.includes("sitrak") || combined.includes("part number") || combined.includes("oem") ||
@@ -2757,16 +2817,19 @@ GLOBAL RULES (MANDATORY):
         let content = sanitizeAiMarkdown(data.choices?.[0]?.message?.content || "");
         const tokensUsed = data.usage?.total_tokens || Math.round(content.length / 4);
 
-        // DATABASE/PRD need more depth; reject shallow outputs so fallback can fill richer content
         const minLen = (docKey === "DATABASE.md" || docKey === "PRD.md" || docKey === "ARCHITECTURE.md") ? 400 : 150;
         if (!content || content.length < minLen) {
-          addLog("error", `AI mengembalikan konten kosong/pendek untuk '${docKey}' (${content ? content.length : 0} chars). Memakai fallback lokal domain-aware.`);
+          const errMsg = `AI mengembalikan respon pendek (${content ? content.length : 0} karakter).`;
+          addLog("error", `AI generate '${docKey}' terpotong/kosong. Notifikasi ditampilkan.`);
           trackApiUsage(1, Math.round(tokensUsed), latency, false);
-          const fallbackProject = createCustomLocalFallbackPackage(
-            project.name, project.category, project.prompt,
-            selectedFrontend, selectedBackend, selectedDb, selectedOrm, tables
-          );
-          content = fallbackProject.versions["v1"][docKey];
+          
+          alert(`⚠️ AI Gagal Menghasilkan Dokumen '${docKey}':\n\nRespon dari AI terlalu singkat atau belum lengkap.\nSilakan coba klik tombol 'Generate Ulang' di dokumen.`);
+          
+          content = `> [!WARNING]
+> ### ⚠️ AI Mengembalikan Respon Terpotong / Terlalu Singkat
+> Dokumen **${docKey}** belum dapat digenerate secara lengkap dari AI Thinking.
+>
+> <button class="btn btn-primary" onclick="window.retryDocGeneration('${projectId}', '${docKey}')" style="margin-top: 10px; padding: 6px 16px; cursor: pointer; font-weight: 600;">⚡ Coba Generate Ulang dengan AI</button>`;
         } else {
           addLog("success", `AI berhasil generate '${docKey}' dalam ${latency}s. Tokens: ${Math.round(tokensUsed)}`);
           trackApiUsage(1, Math.round(tokensUsed), latency, true);
@@ -2776,27 +2839,56 @@ GLOBAL RULES (MANDATORY):
         applyGeneratedDocument(projectId, docKey, content);
       } else {
         const errorText = response ? await response.text() : "empty response";
-        addLog("error", `AI gagal generate '${docKey}' (HTTP ${response?.status || "?"}): ${String(errorText).slice(0, 400)}`);
+        const cleanErr = String(errorText).slice(0, 350);
+        addLog("error", `AI gagal generate '${docKey}' (HTTP ${response?.status || "?"}): ${cleanErr}`);
         trackApiUsage(1, 0, latency, false);
-        const fallbackProject = createCustomLocalFallbackPackage(
-          project.name, project.category, project.prompt,
-          selectedFrontend, selectedBackend, selectedDb, selectedOrm, tables
-        );
+
+        alert(`⚠️ Gagal Menghubungi API AI untuk Dokumen '${docKey}':\n\nStatus: HTTP ${response?.status || "Connection Error"}\nDetail: ${cleanErr}\n\nPeriksa API Key / Base URL di Pengaturan, atau pastikan aplikasi dibuka via XAMPP (http://localhost/PRD%20EDITOR/).`);
+
+        const errMarkdown = `> [!CAUTION]
+> ### ⚠️ Gagal Terhubung ke API AI (${docKey})
+> Dokumen ini **Gagal Digenerate** dari AI Thinking karena koneksi API belum terhubung / terputus.
+>
+> **Detail Error**: \`HTTP ${response?.status || 'Network Error'}: ${cleanErr}\`
+>
+> #### Langkah Penyelesaian:
+> 1. Klik ikon **Pengaturan API (Kunci)** di sudut kanan atas untuk memeriksa **API Key** dan **Base URL**.
+> 2. Jika Anda membuka dari Live Server, silakan buka via XAMPP Apache di: \`http://localhost/PRD%20EDITOR/\` agar proxy lokal (\`proxy.php\`) aktif melewati CORS.
+> 3. Klik tombol di bawah ini untuk mencoba kembali:
+>
+> <button class="btn btn-primary" onclick="window.retryDocGeneration('${projectId}', '${docKey}')" style="margin-top: 12px; padding: 8px 18px; cursor: pointer; font-weight: 600;">⚡ Coba Generate Ulang Dokumen Ini dengan AI</button>`;
+
         activeGenerations.delete(genKey);
-        applyGeneratedDocument(projectId, docKey, fallbackProject.versions["v1"][docKey]);
+        applyGeneratedDocument(projectId, docKey, errMarkdown);
       }
     } catch (err) {
       const latency = ((Date.now() - startTime) / 1000).toFixed(2);
-      addLog("error", `Exception generate '${docKey}': ${err.message || err}`);
+      const errMsg = err.message || String(err);
+      addLog("error", `Exception generate '${docKey}': ${errMsg}`);
       trackApiUsage(1, 0, latency, false);
-      const fallbackProject = createCustomLocalFallbackPackage(
-        project.name, project.category, project.prompt,
-        selectedFrontend, selectedBackend, selectedDb, selectedOrm, tables
-      );
+
+      alert(`⚠️ Koneksi API AI Terputus saat Membuat '${docKey}':\n\nDetail: ${errMsg}\n\nPeriksa koneksi internet atau API Key Anda.`);
+
+      const errMarkdown = `> [!CAUTION]
+> ### ⚠️ Koneksi API AI Terputus (${docKey})
+> Gagal meminta AI Thinking untuk dokumen ini: \`${errMsg}\`.
+>
+> Pastikan API Key valid dan terhubung ke server AI.
+>
+> <button class="btn btn-primary" onclick="window.retryDocGeneration('${projectId}', '${docKey}')" style="margin-top: 12px; padding: 8px 18px; cursor: pointer; font-weight: 600;">⚡ Coba Generate Ulang Dokumen Ini dengan AI</button>`;
+
       activeGenerations.delete(genKey);
-      applyGeneratedDocument(projectId, docKey, fallbackProject.versions["v1"][docKey]);
+      applyGeneratedDocument(projectId, docKey, errMarkdown);
     }
   }
+
+  // Global helper for user-triggered document retry
+  window.retryDocGeneration = function(projectId, docKey) {
+    addLog("info", `Manual retry AI generation for document: ${docKey}`);
+    triggerDocumentGeneration(projectId, docKey, true).catch(err => {
+      alert(`Retry gagal terhubung ke AI:\n\n${err.message || err}`);
+    });
+  };
 
   /**
    * Buat project dari form utama + tech stack, lalu AI engine mendetailkan
