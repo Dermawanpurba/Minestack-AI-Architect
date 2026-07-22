@@ -2797,18 +2797,43 @@ GLOBAL RULES (MANDATORY):
 
     const startTime = Date.now();
     try {
-      const response = await performAiRequest(`${STATE.aiBaseUrl}/chat/completions`, {
-        model: STATE.aiModel,
-        messages: [
-          { role: "system", content: systemPrompt },
-          {
-            role: "user",
-            content: `Sebelum menulis, pastikan Anda memahami domain "${project.category || project.name}" secara operasional. Lalu tuliskan dokumen '${docKey}' lengkap, detail, dan siap produksi untuk proyek "${project.name}". Hindari konten generik.`
+      let response = null;
+      let attempts = 0;
+      const maxAttempts = 2;
+
+      while (attempts < maxAttempts) {
+        attempts++;
+        try {
+          response = await performAiRequest(`${STATE.aiBaseUrl}/chat/completions`, {
+            model: STATE.aiModel,
+            messages: [
+              { role: "system", content: systemPrompt },
+              {
+                role: "user",
+                content: `Sebelum menulis, pastikan Anda memahami domain "${project.category || project.name}" secara operasional. Lalu tuliskan dokumen '${docKey}' lengkap, detail, dan siap produksi untuk proyek "${project.name}". Hindari konten generik.`
+              }
+            ],
+            temperature: 0.3,
+            max_tokens: 6000
+          });
+
+          if (response && response.ok) break;
+
+          if (response && (response.status === 502 || response.status === 503 || response.status === 504) && attempts < maxAttempts) {
+            addLog("info", `AI upstream sibuk (HTTP ${response.status}). Mencoba ulang otomatis (attempt ${attempts}/${maxAttempts})...`);
+            await new Promise(r => setTimeout(r, 1500));
+          } else {
+            break;
           }
-        ],
-        temperature: 0.3,
-        max_tokens: 6000
-      });
+        } catch (reqErr) {
+          if (attempts < maxAttempts) {
+            addLog("info", `Percobaan koneksi ${attempts} gagal (${reqErr.message}). Mencoba ulang...`);
+            await new Promise(r => setTimeout(r, 1500));
+          } else {
+            throw reqErr;
+          }
+        }
+      }
 
       const latency = ((Date.now() - startTime) / 1000).toFixed(2);
 

@@ -158,49 +158,89 @@ module.exports = async function handler(req, res) {
     return json(res, 400, { success: false, message: e.message });
   }
 
-  // Build upstream payload — never trust client Authorization
-  const model = (body.model && String(body.model).trim()) || defaultModel;
-  const upstream = {
-    model,
-    messages: body.messages || [],
-    temperature: body.temperature,
-    max_tokens: body.max_tokens
-  };
-  // Drop undefined keys
-  Object.keys(upstream).forEach((k) => {
-    if (upstream[k] === undefined) delete upstream[k];
-  });
-
-  if (!Array.isArray(upstream.messages) || upstream.messages.length === 0) {
-    return json(res, 400, { success: false, message: "messages wajib diisi." });
-  }
+  const primaryModel = (body.model && String(body.model).trim()) || defaultModel;
+  const candidateModels = [
+    primaryModel,
+    "gpt-4o-mini",
+    "gemini-1.5-flash",
+    "combo1",
+    "claude-3-5-haiku"
+  ].filter((m, i, self) => m && self.indexOf(m) === i);
 
   const targetUrl = `${baseUrl}/chat/completions`;
+  let lastStatus = 502;
+  let lastText = "";
+  let lastModel = primaryModel;
 
-  try {
-    const upstreamRes = await fetch(targetUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`
-      },
-      body: JSON.stringify(upstream)
+  for (let i = 0; i < candidateModels.length; i++) {
+    const currentModel = candidateModels[i];
+    const upstream = {
+      model: currentModel,
+      messages: body.messages || [],
+      temperature: body.temperature,
+      max_tokens: body.max_tokens
+    };
+    Object.keys(upstream).forEach((k) => {
+      if (upstream[k] === undefined) delete upstream[k];
     });
 
-    const text = await upstreamRes.text();
-    res.statusCode = upstreamRes.status;
-    res.setHeader(
-      "Content-Type",
-      upstreamRes.headers.get("content-type") || "application/json; charset=utf-8"
-    );
-    res.setHeader("Cache-Control", "no-store");
-    // Expose which model was used (non-secret)
-    res.setHeader("X-AI-Model", model);
-    res.end(text);
-  } catch (err) {
-    return json(res, 502, {
-      success: false,
-      message: "Gagal menghubungi AI upstream: " + (err.message || String(err))
-    });
+    if (!Array.isArray(upstream.messages) || upstream.messages.length === 0) {
+      return json(res, 400, { success: false, message: "messages wajib diisi." });
+    }
+
+    try {
+      const upstreamRes = await fetch(targetUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`
+        },
+        body: JSON.stringify(upstream)
+      });
+
+      const text = await upstreamRes.text();
+      lastStatus = upstreamRes.status;
+      lastText = text;
+      lastModel = currentModel;
+
+      if (upstreamRes.ok) {
+        res.statusCode = upstreamRes.status;
+        res.setHeader(
+          "Content-Type",
+          upstreamRes.headers.get("content-type") || "application/json; charset=utf-8"
+        );
+        res.setHeader("Cache-Control", "no-store");
+        res.setHeader("X-AI-Model", currentModel);
+        res.end(text);
+        return;
+      }
+
+      const isRouterError =
+        upstreamRes.status === 502 ||
+        upstreamRes.status === 503 ||
+        upstreamRes.status === 504 ||
+        /temporarily unavailable|router_error|model_not_found|busy|overloaded/i.test(text);
+
+      if (!isRouterError || i === candidateModels.length - 1) {
+        break;
+      }
+
+      // Pause briefly before trying fallback model
+      await new Promise((r) => setTimeout(r, 1200));
+    } catch (err) {
+      lastStatus = 502;
+      lastText = JSON.stringify({
+        error: {
+          message: "Gagal menghubungi AI upstream: " + (err.message || String(err)),
+          type: "network_error"
+        }
+      });
+    }
   }
+
+  res.statusCode = lastStatus;
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
+  res.setHeader("Cache-Control", "no-store");
+  res.setHeader("X-AI-Model", lastModel);
+  res.end(lastText);
 };
