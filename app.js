@@ -3737,6 +3737,22 @@ Jawab berdasarkan panduan produk + proyek + dokumen aktif di atas. Tolak topik d
 
   function bindEvents() {
     try {
+      // Global delegation listener for Dashboard navigation safety net
+      document.addEventListener("click", (e) => {
+        const dashTrigger = e.target.closest("#heroViewDashboardBtn, #hdrDashboardBtn, #sbDashBtn, #wsBackToDashBtn");
+        if (dashTrigger) {
+          e.preventDefault();
+          switchView("dashboard");
+          return;
+        }
+        const startTrigger = e.target.closest("#heroStartBtn, #dashNewProjectBtn");
+        if (startTrigger) {
+          e.preventDefault();
+          openNewProjectModal();
+          return;
+        }
+      });
+
       // Navigation Routing
       onClick(DOM.navBrandBtn, () => switchView("landing"));
       onClick(DOM.navLinkArchitect, () => switchView("landing"));

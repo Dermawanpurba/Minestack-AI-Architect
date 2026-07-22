@@ -171,19 +171,27 @@ button {
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 .nav-link-btn {
   padding: 8px 16px;
   border-radius: var(--radius-sm);
-  color: var(--text-muted);
+  color: #e4e4e7;
   font-size: 0.9rem;
-  font-weight: 500;
+  font-weight: 600;
   transition: all var(--transition-fast);
+  border: 1px solid transparent;
 }
-.nav-link-btn:hover, .nav-link-btn.active {
+.nav-link-btn:hover {
   color: #ffffff;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(139, 92, 246, 0.18);
+  border-color: rgba(139, 92, 246, 0.3);
+}
+.nav-link-btn.active {
+  color: #ffffff;
+  background: rgba(139, 92, 246, 0.25);
+  border-color: rgba(168, 85, 247, 0.45);
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.25);
 }
 
 .header-right {
@@ -195,18 +203,19 @@ button {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: var(--text-muted);
+  color: #e4e4e7;
   font-size: 0.85rem;
-  padding: 6px 12px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--border-color);
+  font-weight: 500;
+  padding: 6px 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 20px;
 }
 
 .btn-primary {
   background: #ffffff;
   color: #000000;
-  font-weight: 600;
+  font-weight: 700;
   padding: 8px 18px;
   border-radius: var(--radius-sm);
   display: inline-flex;
@@ -214,7 +223,7 @@ button {
   gap: 8px;
   font-size: 0.88rem;
   transition: all var(--transition-fast);
-  box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 10px rgba(255, 255, 255, 0.18);
 }
 .btn-primary:hover {
   background: #e4e4e7;
@@ -222,10 +231,10 @@ button {
 }
 
 .btn-outline {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.06);
   color: #ffffff;
-  border: 1px solid var(--border-color);
-  font-weight: 500;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  font-weight: 600;
   padding: 8px 16px;
   border-radius: var(--radius-sm);
   display: inline-flex;
@@ -235,8 +244,8 @@ button {
   transition: all var(--transition-fast);
 }
 .btn-outline:hover {
-  background: rgba(255, 255, 255, 0.09);
-  border-color: var(--border-color-hover);
+  background: rgba(139, 92, 246, 0.15);
+  border-color: rgba(168, 85, 247, 0.5);
 }
 
 /* App Main Layout Structure — fit viewport at 100% zoom */
@@ -252,13 +261,13 @@ button {
 /* Outer Left Sidebar */
 .outer-sidebar {
   width: var(--sidebar-width);
-  background: var(--bg-surface);
-  border-right: 1px solid var(--border-color);
+  background: #0b0917;
+  border-right: 1px solid rgba(139, 92, 246, 0.22);
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 16px 0;
-  gap: 16px;
+  gap: 14px;
   position: fixed;
   top: var(--header-height);
   bottom: 0;
@@ -273,24 +282,29 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-muted);
+  color: #e4e4e7;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   transition: all var(--transition-fast);
   position: relative;
 }
 .sidebar-icon-btn:hover {
   color: #ffffff;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(139, 92, 246, 0.22);
+  border-color: rgba(168, 85, 247, 0.45);
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.3);
 }
 .sidebar-icon-btn.active {
-  color: var(--accent-green);
-  background: rgba(16, 185, 129, 0.12);
-  border: 1px solid rgba(16, 185, 129, 0.25);
+  color: #ffffff;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.35), rgba(217, 70, 239, 0.22));
+  border: 1px solid rgba(168, 85, 247, 0.55);
+  box-shadow: 0 0 16px rgba(139, 92, 246, 0.4);
 }
 
 .sidebar-divider {
   width: 28px;
   height: 1px;
-  background: var(--border-color);
+  background: rgba(255, 255, 255, 0.15);
   margin: 4px 0;
 }
 
