@@ -684,115 +684,59 @@
       if (typeof e.stopPropagation === "function") e.stopPropagation();
     }
 
+    // Read email & name if typed by user, else default to Gmail user
+    const regEmailEl = document.getElementById("regEmail");
+    const loginEmailEl = document.getElementById("loginEmail");
+    const regNameEl = document.getElementById("regName");
+
+    let targetEmail = (regEmailEl?.value || loginEmailEl?.value || "").trim().toLowerCase();
+    let targetName = (regNameEl?.value || "").trim();
+
+    if (!targetEmail || !targetEmail.includes("@")) {
+      targetEmail = "dermawan.prb@gmail.com";
+    }
+    if (!targetName) {
+      targetName = targetEmail.split("@")[0].replace(/[\._]/g, " ").replace(/\b\w/g, l => l.toUpperCase());
+    }
+
+    // Instant registration & session creation
+    const users = getUsers();
+    let user = users.find(u => (u.email || "").toLowerCase() === targetEmail);
+    if (!user) {
+      user = {
+        email: targetEmail,
+        name: targetName + " (Gmail)",
+        provider: "google",
+        role: "user",
+        createdAt: new Date().toISOString()
+      };
+      users.push(user);
+      saveUsers(users);
+    }
+
+    saveSession(user);
+    showApp();
+    bootAppAfterLogin();
+    updateUserQuotaUI();
+    addLog("info", `Instant Google Gmail Register: ${targetEmail}`);
+
     if (window.Swal) {
       Swal.fire({
-        title: `<div style="display:flex; align-items:center; justify-content:center; gap:10px;"><svg width="24" height="24" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.27v3.15C3.25 21.3 7.31 24 12 24z"/><path fill="#FBBC05" d="M5.28 14.27A7.26 7.26 0 0 1 4.9 12c0-.79.14-1.57.38-2.27V6.58H1.27A11.97 11.97 0 0 0 0 12c0 1.92.45 3.74 1.27 5.42l4.01-3.15z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.25 2.7 1.27 6.58l4.01 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/></svg> Sign In dengan Google</div>`,
+        icon: "success",
+        title: `🎉 Akun Gmail Berhasil Terdaftar!`,
         html: `
-          <div style="text-align:left; font-size:0.9rem; color:#e2e8f0;">
-            <p style="margin-bottom:14px; color:#a1a1aa; text-align:center;">Pilih akun Gmail Anda untuk masuk ke Minestack AI Architect (Free 2x Generate):</p>
-            
-            <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:16px;">
-              <div id="swalOptGmail1" style="display:flex; align-items:center; gap:12px; padding:12px 14px; background:rgba(255,255,255,0.06); border:1px solid rgba(139,92,246,0.3); border-radius:10px; cursor:pointer; transition:all 0.2s ease;">
-                <div style="width:36px; height:36px; border-radius:50%; background:#ea4335; color:#ffffff; font-weight:800; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0;">D</div>
-                <div>
-                  <div style="font-weight:700; color:#ffffff;">Dermawan Purba</div>
-                  <div style="font-size:0.8rem; color:#a1a1aa;">dermawan.prb@gmail.com</div>
-                </div>
-              </div>
-
-              <div id="swalOptGmail2" style="display:flex; align-items:center; gap:12px; padding:12px 14px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px; cursor:pointer; transition:all 0.2s ease;">
-                <div style="width:36px; height:36px; border-radius:50%; background:#4285f4; color:#ffffff; font-weight:800; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0;">M</div>
-                <div>
-                  <div style="font-weight:700; color:#ffffff;">Minestack Demo User</div>
-                  <div style="font-size:0.8rem; color:#a1a1aa;">user.demo@gmail.com</div>
-                </div>
-              </div>
-            </div>
-
-            <div style="margin-top:10px;">
-              <label style="display:block; font-size:0.8rem; color:#a1a1aa; margin-bottom:4px;">Atau ketikkan email Gmail Anda:</label>
-              <input type="email" id="swalCustomGmail" class="swal2-input" placeholder="nama.anda@gmail.com" style="margin:0; width:100%; box-sizing:border-box; background:rgba(255,255,255,0.08); color:#ffffff; border-color:rgba(255,255,255,0.2);">
-            </div>
+          <div style="text-align:center; font-size:0.92rem; color:#e2e8f0; line-height:1.5;">
+            Selamat datang <strong>${user.name}</strong> (${user.email})!<br>
+            <span style="color:#d8b4fe; font-weight:700; display:block; margin-top:6px;">⚡ Kuota 2x Free AI Blueprint Generate Aktif.</span>
           </div>
         `,
-        showCancelButton: true,
-        confirmButtonText: "Lanjutkan dengan Akun Gmail",
-        cancelButtonText: "Batal",
-        confirmButtonColor: "#8b5cf6",
+        timer: 2000,
+        showConfirmButton: false,
         background: "#151126",
-        color: "#ffffff",
-        didOpen: () => {
-          const opt1 = document.getElementById("swalOptGmail1");
-          const opt2 = document.getElementById("swalOptGmail2");
-          const custom = document.getElementById("swalCustomGmail");
-
-          if (opt1) {
-            opt1.addEventListener("click", () => {
-              if (custom) custom.value = "dermawan.prb@gmail.com";
-              Swal.clickConfirm();
-            });
-          }
-          if (opt2) {
-            opt2.addEventListener("click", () => {
-              if (custom) custom.value = "user.demo@gmail.com";
-              Swal.clickConfirm();
-            });
-          }
-        },
-        preConfirm: () => {
-          const customVal = (document.getElementById("swalCustomGmail")?.value || "").trim();
-          if (!customVal || !customVal.includes("@")) {
-            Swal.showValidationMessage("Silakan klik salah satu akun di atas atau isi email Gmail yang valid!");
-            return false;
-          }
-          return customVal;
-        }
-      }).then((res) => {
-        if (res.isConfirmed && res.value) {
-          const cleanEmail = res.value.trim().toLowerCase();
-          const userName = cleanEmail.split("@")[0].replace(/[\._]/g, " ").replace(/\b\w/g, l => l.toUpperCase());
-
-          const users = getUsers();
-          let user = users.find(u => (u.email || "").toLowerCase() === cleanEmail);
-          if (!user) {
-            user = {
-              email: cleanEmail,
-              name: userName,
-              provider: "google",
-              role: "user",
-              createdAt: new Date().toISOString()
-            };
-            users.push(user);
-            saveUsers(users);
-          }
-
-          saveSession(user);
-          showApp();
-          bootAppAfterLogin();
-          updateUserQuotaUI();
-          addLog("info", `Google Gmail Auth Success: ${cleanEmail}`);
-
-          Swal.fire({
-            icon: "success",
-            title: `Selamat Datang, ${userName}!`,
-            text: "Akun Gmail Anda terverifikasi dengan Kuota 2x Free AI Generate.",
-            timer: 2200,
-            showConfirmButton: false,
-            background: "#151126",
-            color: "#ffffff"
-          });
-        }
+        color: "#ffffff"
       });
     } else {
-      const email = prompt("Masukkan email Gmail Anda:", "dermawan.prb@gmail.com");
-      if (email) {
-        const cleanEmail = email.trim().toLowerCase();
-        const user = { email: cleanEmail, name: "Google User", provider: "google", role: "user" };
-        saveSession(user);
-        showApp();
-        bootAppAfterLogin();
-        updateUserQuotaUI();
-      }
+      alert(`Selamat Datang, ${user.name}! Akun Gmail (${user.email}) Anda aktif dengan 2x Free AI Generate.`);
     }
   }
 
