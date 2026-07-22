@@ -2,7 +2,7 @@
 /**
  * PHP Proxy for PRD Editor AI Requests
  * Forwards chat completion requests from local XAMPP environment to AI API upstream.
- * Automatically attempts fallback models on HTTP 502 / router_error.
+ * Strictly uses requested model (combo1).
  */
 
 header("Access-Control-Allow-Origin: *");
@@ -39,33 +39,15 @@ if (empty($input)) {
     exit;
 }
 
-$data = json_decode($input, true);
-$primaryModel = isset($data['model']) ? $data['model'] : 'combo1';
-
-$candidateModels = array_values(array_unique([
-    $primaryModel,
-    'gpt-4o-mini',
-    'gemini-1.5-flash',
-    'combo1',
-    'claude-3-5-haiku'
-]));
-
+$maxAttempts = 2;
 $lastHttpCode = 502;
 $lastResponse = '';
 
-foreach ($candidateModels as $idx => $model) {
-    $currentData = $data;
-    if (is_array($currentData)) {
-        $currentData['model'] = $model;
-        $payload = json_encode($currentData);
-    } else {
-        $payload = $input;
-    }
-
+for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
     $ch = curl_init($targetUrl);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $input);
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
         'Content-Type: application/json',
         'Authorization: ' . $authHeader
@@ -82,7 +64,11 @@ foreach ($candidateModels as $idx => $model) {
     if ($response === false) {
         $lastHttpCode = 502;
         $lastResponse = json_encode(['error' => ['message' => 'PHP cURL Error: ' . $curlErr]]);
-        continue;
+        if ($attempt < $maxAttempts) {
+            usleep(1500000);
+            continue;
+        }
+        break;
     }
 
     $lastHttpCode = $httpCode ? $httpCode : 500;
@@ -93,13 +79,13 @@ foreach ($candidateModels as $idx => $model) {
     }
 
     $isRouterError = ($httpCode === 502 || $httpCode === 503 || $httpCode === 504 || 
-                      preg_match('/temporarily unavailable|router_error|model_not_found|busy|overloaded/i', $response));
+                      preg_match('/temporarily unavailable|router_error|overloaded/i', $response));
 
-    if (!$isRouterError || $idx === count($candidateModels) - 1) {
+    if (!$isRouterError || $attempt === $maxAttempts) {
         break;
     }
 
-    usleep(1200000); // Wait 1.2s before trying fallback model
+    usleep(1500000); // Wait 1.5s before retrying
 }
 
 http_response_code($lastHttpCode);

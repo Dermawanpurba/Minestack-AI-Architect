@@ -3149,34 +3149,84 @@ GLOBAL RULES (MANDATORY):
   }
 
   async function prefetchProjectDocuments(projectId, forceEmpty = false) {
+    // Start step-by-step document generation starting with PRD.md
+    await triggerStepByStepDocumentGeneration(projectId, "PRD.md", forceEmpty);
+  }
+
+  async function triggerStepByStepDocumentGeneration(projectId, docKey, forceEmpty = false) {
     const project = STATE.projects.find(p => p.id === projectId);
     if (!project) return;
-    const versionData = project.versions["v1"] || {};
-    const docKeys = ["PRD.md", "TECH_STACK.md", "ARCHITECTURE.md", "DATABASE.md", "API.md", "DEPLOYMENT.md"];
-    const pending = docKeys.filter(docKey => {
-      const content = versionData[docKey];
-      if (content === "__PENDING_GENERATION__") return true;
-      if (forceEmpty && isDocumentEmptyOrPending(content)) return true;
-      return false;
-    });
 
-    if (!pending.length) {
-      addLog("info", `Tidak ada dokumen pending/kosong untuk di-generate pada proyek "${project.name}".`);
+    addLog("info", `[Step-by-Step AI] Generasi dokumen '${docKey}' dimulai untuk proyek "${project.name}"...`);
+
+    // Switch workspace active document view to target document if currently open
+    if (STATE.currentProject && STATE.currentProject.id === projectId) {
+      STATE.currentDocKey = docKey;
+      renderDocumentNav();
+      showDocumentGeneratingState(docKey);
+    }
+
+    try {
+      await triggerDocumentGeneration(projectId, docKey, forceEmpty);
+    } catch (e) {
+      console.error("Step-by-step document generation error for", docKey, e);
       return;
     }
 
-    addLog("info", `Mulai generate ${pending.length} dokumen: ${pending.join(", ")}`);
+    // Check result of current document generation
+    const versionData = project.versions["v1"] || {};
+    const content = versionData[docKey] || "";
 
-    // Sequential with small delay reduces API rate-limit risk while keeping UI responsive
-    for (const docKey of pending) {
-      try {
-        await triggerDocumentGeneration(projectId, docKey, forceEmpty);
-      } catch (e) {
-        console.error("Prefetch error for", docKey, e);
-        addLog("error", `Prefetch error ${docKey}: ${e.message || e}`);
+    // If document failed or contains caution banner, pause step-by-step progression
+    if (!content || content.includes("Gagal Terhubung ke API AI") || content.includes("Koneksi API AI Terputus")) {
+      addLog("warn", `Proses step-by-step dihentikan pada '${docKey}' karena koneksi API bermasalah.`);
+      return;
+    }
+
+    // Define document sequence
+    const docSequence = ["PRD.md", "TECH_STACK.md", "ARCHITECTURE.md", "DATABASE.md", "API.md", "DEPLOYMENT.md"];
+    const currentIndex = docSequence.indexOf(docKey);
+
+    if (currentIndex >= 0 && currentIndex < docSequence.length - 1) {
+      const nextDocKey = docSequence[currentIndex + 1];
+      const nextContent = versionData[nextDocKey];
+
+      // Prompt user confirmation to proceed to next document
+      if (nextContent === "__PENDING_GENERATION__" || isDocumentEmptyOrPending(nextContent)) {
+        setTimeout(() => {
+          promptNextDocumentConfirmation(projectId, docKey, nextDocKey);
+        }, 500);
       }
-      // Brief pause between docs
-      await new Promise(r => setTimeout(r, 250));
+    } else if (currentIndex === docSequence.length - 1) {
+      addLog("success", `🎉 Seluruh 6 dokumen blueprint software untuk "${project.name}" telah lengkap!`);
+    }
+  }
+
+  function promptNextDocumentConfirmation(projectId, currentDocKey, nextDocKey) {
+    const project = STATE.projects.find(p => p.id === projectId);
+    if (!project) return;
+
+    const docLabels = {
+      "PRD.md": "Product Requirements Document (PRD)",
+      "TECH_STACK.md": "Rekomendasi Tech Stack",
+      "ARCHITECTURE.md": "Arsitektur Sistem",
+      "DATABASE.md": "Skema Database & ERD",
+      "API.md": "Kontrak API",
+      "DEPLOYMENT.md": "Panduan Deployment"
+    };
+
+    const currentTitle = docLabels[currentDocKey] || currentDocKey;
+    const nextTitle = docLabels[nextDocKey] || nextDocKey;
+
+    const confirmMsg = `✅ Dokumen '${currentDocKey}' (${currentTitle}) BERHASIL digenerate oleh AI Thinking!\n\nApakah Anda ingin melanjutkan men-generate dokumen berikutnya:\n👉 '${nextDocKey}' (${nextTitle})?\n\n(Klik OK untuk lanjut generate ${nextDocKey}, atau Cancel untuk berhenti sementara).`;
+
+    if (confirm(confirmMsg)) {
+      addLog("info", `User menyetujui generasi dokumen berikutnya: ${nextDocKey}`);
+      triggerStepByStepDocumentGeneration(projectId, nextDocKey, true).catch(err => {
+        alert(`Gagal men-generate '${nextDocKey}': ${err.message || err}`);
+      });
+    } else {
+      addLog("info", `Generasi dokumen berikutnya (${nextDocKey}) ditunda. Anda dapat men-generate dokumen ini kapan saja secara manual.`);
     }
   }
 

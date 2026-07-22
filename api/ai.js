@@ -158,36 +158,27 @@ module.exports = async function handler(req, res) {
     return json(res, 400, { success: false, message: e.message });
   }
 
-  const primaryModel = (body.model && String(body.model).trim()) || defaultModel;
-  const candidateModels = [
-    primaryModel,
-    "gpt-4o-mini",
-    "gemini-1.5-flash",
-    "combo1",
-    "claude-3-5-haiku"
-  ].filter((m, i, self) => m && self.indexOf(m) === i);
-
+  const targetModel = (body.model && String(body.model).trim()) || defaultModel;
   const targetUrl = `${baseUrl}/chat/completions`;
+  const maxAttempts = 2;
   let lastStatus = 502;
   let lastText = "";
-  let lastModel = primaryModel;
 
-  for (let i = 0; i < candidateModels.length; i++) {
-    const currentModel = candidateModels[i];
-    const upstream = {
-      model: currentModel,
-      messages: body.messages || [],
-      temperature: body.temperature,
-      max_tokens: body.max_tokens
-    };
-    Object.keys(upstream).forEach((k) => {
-      if (upstream[k] === undefined) delete upstream[k];
-    });
+  const upstream = {
+    model: targetModel,
+    messages: body.messages || [],
+    temperature: body.temperature,
+    max_tokens: body.max_tokens
+  };
+  Object.keys(upstream).forEach((k) => {
+    if (upstream[k] === undefined) delete upstream[k];
+  });
 
-    if (!Array.isArray(upstream.messages) || upstream.messages.length === 0) {
-      return json(res, 400, { success: false, message: "messages wajib diisi." });
-    }
+  if (!Array.isArray(upstream.messages) || upstream.messages.length === 0) {
+    return json(res, 400, { success: false, message: "messages wajib diisi." });
+  }
 
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       const upstreamRes = await fetch(targetUrl, {
         method: "POST",
@@ -201,7 +192,6 @@ module.exports = async function handler(req, res) {
       const text = await upstreamRes.text();
       lastStatus = upstreamRes.status;
       lastText = text;
-      lastModel = currentModel;
 
       if (upstreamRes.ok) {
         res.statusCode = upstreamRes.status;
@@ -210,23 +200,24 @@ module.exports = async function handler(req, res) {
           upstreamRes.headers.get("content-type") || "application/json; charset=utf-8"
         );
         res.setHeader("Cache-Control", "no-store");
-        res.setHeader("X-AI-Model", currentModel);
+        res.setHeader("X-AI-Model", targetModel);
         res.end(text);
         return;
       }
 
+      // Retry only on 502/503/504 router errors
       const isRouterError =
         upstreamRes.status === 502 ||
         upstreamRes.status === 503 ||
         upstreamRes.status === 504 ||
-        /temporarily unavailable|router_error|model_not_found|busy|overloaded/i.test(text);
+        /temporarily unavailable|router_error|overloaded/i.test(text);
 
-      if (!isRouterError || i === candidateModels.length - 1) {
+      if (!isRouterError || attempt === maxAttempts) {
         break;
       }
 
-      // Pause briefly before trying fallback model
-      await new Promise((r) => setTimeout(r, 1200));
+      // Pause before retry
+      await new Promise((r) => setTimeout(r, 1500));
     } catch (err) {
       lastStatus = 502;
       lastText = JSON.stringify({
@@ -235,12 +226,15 @@ module.exports = async function handler(req, res) {
           type: "network_error"
         }
       });
+      if (attempt < maxAttempts) {
+        await new Promise((r) => setTimeout(r, 1500));
+      }
     }
   }
 
   res.statusCode = lastStatus;
   res.setHeader("Content-Type", "application/json; charset=utf-8");
   res.setHeader("Cache-Control", "no-store");
-  res.setHeader("X-AI-Model", lastModel);
+  res.setHeader("X-AI-Model", targetModel);
   res.end(lastText);
 };
