@@ -2814,7 +2814,7 @@ GLOBAL RULES (MANDATORY):
               }
             ],
             temperature: 0.3,
-            max_tokens: 6000
+            max_tokens: 3500
           });
 
           if (response && response.ok) break;
@@ -2842,16 +2842,17 @@ GLOBAL RULES (MANDATORY):
         let content = sanitizeAiMarkdown(data.choices?.[0]?.message?.content || "");
         const tokensUsed = data.usage?.total_tokens || Math.round(content.length / 4);
 
-        const minLen = (docKey === "DATABASE.md" || docKey === "PRD.md" || docKey === "ARCHITECTURE.md") ? 400 : 150;
+        // Only reject if content is truly empty or less than 30 characters
+        const minLen = 30;
         if (!content || content.length < minLen) {
-          const errMsg = `AI mengembalikan respon pendek (${content ? content.length : 0} karakter).`;
+          const errMsg = `AI mengembalikan respon terpotong/kosong (${content ? content.length : 0} karakter).`;
           addLog("error", `AI generate '${docKey}' terpotong/kosong. Notifikasi ditampilkan.`);
           trackApiUsage(1, Math.round(tokensUsed), latency, false);
           
-          alert(`⚠️ AI Gagal Menghasilkan Dokumen '${docKey}':\n\nRespon dari AI terlalu singkat atau belum lengkap.\nSilakan coba klik tombol 'Generate Ulang' di dokumen.`);
+          alert(`⚠️ AI Gagal Menghasilkan Dokumen '${docKey}':\n\nRespon dari AI kosong atau terpotong.\nSilakan coba klik tombol 'Generate Ulang' di dokumen.`);
           
           content = `> [!WARNING]
-> ### ⚠️ AI Mengembalikan Respon Terpotong / Terlalu Singkat
+> ### ⚠️ AI Mengembalikan Respon Terpotong / Kosong
 > Dokumen **${docKey}** belum dapat digenerate secara lengkap dari AI Thinking.
 >
 > <button class="btn btn-primary" onclick="window.retryDocGeneration('${projectId}', '${docKey}')" style="margin-top: 10px; padding: 6px 16px; cursor: pointer; font-weight: 600;">⚡ Coba Generate Ulang dengan AI</button>`;
