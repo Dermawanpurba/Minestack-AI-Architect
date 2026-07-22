@@ -852,6 +852,10 @@
     }
   }
 
+  // Expose handlers to global window scope so HTML onclick attributes work seamlessly
+  window.handleGoogleAuth = handleGoogleAuth;
+  window.showSubscriptionPaymentModal = showSubscriptionPaymentModal;
+
   function bindAuthEvents() {
     const tabLogin = document.getElementById("authTabLogin");
     const tabRegister = document.getElementById("authTabRegister");
