@@ -815,6 +815,20 @@
         </div>
 
         <div class="form-group">
+          <label class="form-label">Tipe / Archetype Aplikasi</label>
+          <select class="form-select" id="inputProjArchetype" style="padding: 8px 12px; font-weight: 600;">
+            <option value="AUTO">🎯 Otomatis (Deteksi Kata Kunci & Domain)</option>
+            <option value="ERP_DASHBOARD">🏭 ERP / CMMS Operational Dashboard System</option>
+            <option value="ARCHIVE_SOP">📁 Digital Archive / SOP / DMS Management System</option>
+            <option value="LANDING_PAGE">🚀 Marketing Landing Page & Showcase (GSAP + Lenis)</option>
+            <option value="ECOMMERCE">🛒 E-Commerce & Marketplace Platform</option>
+            <option value="BANKING">🏦 Perbankan & Keuangan (Fintech Ledger)</option>
+            <option value="HRIS">👥 HRIS & Analytics Management System</option>
+            <option value="SCM">📦 SCM & Warehouse Management System (WMS)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
           <label class="form-label">Ceritakan Ide Aplikasi Anda</label>
           <textarea class="form-textarea" id="inputProjPrompt"
             placeholder="Jelaskan kebutuhan aplikasi, alur bisnis utama, alur pembayaran, atau fitur khusus lainnya yang ingin Anda buat..."></textarea>
@@ -826,8 +840,8 @@
           <i data-lucide="sparkles"
             style="width: 18px; height: 18px; color: var(--accent-green); flex-shrink: 0; margin-top: 2px;"></i>
           <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.4;">
-            Pilih <strong>tech stack</strong>, lalu klik <strong>Buat Blueprint dengan AI</strong>.
-            AI engine mendetailkan 6 dokumen: PRD, Tech Stack, Architecture, Database, API, Deployment.
+            Pilih <strong>Archetype Aplikasi</strong> & <strong>Tech Stack</strong>.
+            AI engine mendetailkan 6 dokumen: PRD, Tech Stack, Architecture, Database, API, Deployment secara pas tanpa template generik.
           </p>
         </div>
 

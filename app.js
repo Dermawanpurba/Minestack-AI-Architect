@@ -130,6 +130,7 @@
     modalFormBody: document.getElementById("modalFormBody"),
     modalProgressBody: document.getElementById("modalProgressBody"),
     inputProjName: document.getElementById("inputProjName"),
+    inputProjArchetype: document.getElementById("inputProjArchetype"),
     inputProjPrompt: document.getElementById("inputProjPrompt"),
     // Main form tech stack (create blueprint without AI)
     inputProjFrontendMain: document.getElementById("inputProjFrontendMain"),
@@ -1358,16 +1359,111 @@
     }
   }
 
-  function getCategoryStackRecommendation(category, prompt) {
+  function getCategoryStackRecommendation(category, prompt, forcedArchetype = "AUTO") {
     const cat = (category || "").toLowerCase();
     const idea = (prompt || "").toLowerCase();
     const combined = `${cat} ${idea}`;
+    const arch = (forcedArchetype || "AUTO").toUpperCase();
 
-    // Infer stack from idea text (category form removed — AI / local both use idea)
+    // 1. Digital Archive & SOP / DMS Archetype
     if (
-      combined.includes("perbankan") || combined.includes("keuangan") || combined.includes("fintech") ||
-      combined.includes("bank") || combined.includes("transfer") || combined.includes("rekening") ||
-      combined.includes("payment") || combined.includes("ledger")
+      arch === "ARCHIVE_SOP" ||
+      (arch === "AUTO" && (
+        combined.includes("arsip") || combined.includes("sop") || combined.includes("jsa") ||
+        combined.includes("document") || combined.includes("archive") || combined.includes("dms") ||
+        combined.includes("berkas")
+      ))
+    ) {
+      return {
+        category: "Digital Archive & SOP Management (DMS)",
+        domainDefinition: "Sistem pengarsipan digital terintegrasi untuk mengelola berkas dokumen, standar operasional prosedur (SOP), Job Safety Analysis (JSA), hierarki folder/direktori, versi dokumen, kontrol akses, audit log, dan preview PDF — bukan sekadar repositori file mentah.",
+        coreProcesses: [
+          "Struktur direktori & hierarki folder terorganisir",
+          "Upload & penomoran otomatis dokumen SOP/JSA",
+          "Versi dokumen & riwayat revisi",
+          "Document Viewer & PDF preview modal",
+          "Hak akses & matriks otorisasi baca/edit",
+          "Pencarian cepat, tag, & audit trail akses"
+        ],
+        frontend: "React + Next.js",
+        frontendWhy: "Cocok untuk UI workspace direktori berkas, preview PDF modal, dan navigasi breadcrumb responsif.",
+        backend: "Node.js + Express",
+        backendWhy: "Efisien mengelola streaming file dokumen, metadata, dan otentikasi role.",
+        db: "PostgreSQL",
+        dbWhy: "Integritas data relasional untuk hierarki folder, rincian revisi, dan audit log.",
+        orm: "Prisma",
+        ormWhy: "Type-safe schema untuk mengelola relasi dokumen, folder, dan permission.",
+        scope: "Platform DMS & SOP Management multi-role (Staff, Author, Reviewer, Admin, Auditor) dengan hierarki folder, penomoran berkas otomatis, kontrol versi, PDF preview, matriks otorisasi, dan audit trail.",
+        tables: [
+          { name: "directories", columns: "id, parent_id, code, name, description, created_at", description: "Struktur folder & direktori." },
+          { name: "documents", columns: "id, directory_id, doc_number, title, category, status, security_level, current_version_id, created_by, created_at", description: "Master data dokumen SOP/JSA." },
+          { name: "document_versions", columns: "id, document_id, version_number, file_url, file_size, file_type, change_summary, uploaded_by, created_at", description: "Riwayat versi & file dokumen." },
+          { name: "document_tags", columns: "id, document_id, tag_name", description: "Tag & kata kunci dokumen." },
+          { name: "document_approvals", columns: "id, document_id, version_id, reviewer_id, status, notes, reviewed_at", description: "Alur persetujuan revisi dokumen." },
+          { name: "document_access_roles", columns: "id, document_id, role_name, can_view, can_edit, can_download", description: "Matriks otorisasi dokumen." },
+          { name: "audit_logs", columns: "id, actor_id, action, entity, entity_id, meta, created_at", description: "Audit trail pembacaan/download dokumen." }
+        ],
+        questions: [
+          "Apakah dokumen memerlukan penomoran otomatis per divisi?",
+          "Berapa level alur approval revisi dokumen SOP?",
+          "Apakah perlu pengamanan watermark pada preview PDF?"
+        ]
+      };
+    }
+
+    // 2. Marketing Landing Page & Showcase Archetype
+    if (
+      arch === "LANDING_PAGE" ||
+      (arch === "AUTO" && (
+        combined.includes("landing") || combined.includes("portfolio") || combined.includes("showcase") ||
+        combined.includes("company profile") || combined.includes("promosi") || combined.includes("marketing")
+      ))
+    ) {
+      return {
+        category: "Marketing Landing Page & Showcase",
+        domainDefinition: "Platform landing page promosi & showcase produk performa tinggi yang mengintegrasikan animasi interaktif GSAP, Lenis smooth scroll, parallax hero background, feature grid, testimonial carousel, pricing toggle, dan penangkapan prospek (leads).",
+        coreProcesses: [
+          "Floating glassmorphism navigation header",
+          "Hero section dengan animasi interaktif GSAP & Lenis",
+          "Feature showcase grid & interactive tabs",
+          "Social proof, client logos & testimonial carousel",
+          "Interactive pricing plans & monthly/yearly toggle",
+          "Lead capture contact form & SweetAlert notification"
+        ],
+        frontend: "HTML + Alpine.js",
+        frontendWhy: "Mewajibkan library animasi GSAP + Lenis Smooth Scroll untuk efek Parallax & Motion Typography WOW factor.",
+        backend: "Node.js + Express",
+        backendWhy: "Ringan untuk API penangkapan lead contact form dan statistik pengunjung.",
+        db: "PostgreSQL",
+        dbWhy: "Penyimpanan data leads, testimoni, pricing plans, dan event analitik.",
+        orm: "Prisma",
+        ormWhy: "Produktivitas tinggi untuk CMS konten landing page.",
+        scope: "Landing Page interaktif responsif dengan animasi GSAP, Lenis smooth scroll, parallax hero mesh, feature showcase, testimoni, pricing calculator, dan form penangkapan prospek.",
+        tables: [
+          { name: "hero_slides", columns: "id, title, subtitle, bg_image, cta_text, cta_link", description: "Konten hero section." },
+          { name: "features", columns: "id, title, description, icon_class, sort_order", description: "Item fitur keunggulan." },
+          { name: "testimonials", columns: "id, client_name, company, avatar_url, quote, rating", description: "Testimoni pelanggan." },
+          { name: "pricing_plans", columns: "id, name, price_monthly, price_yearly, features_json, is_popular", description: "Paket harga." },
+          { name: "faqs", columns: "id, question, answer, category, sort_order", description: "Tanya jawab FAQ." },
+          { name: "leads", columns: "id, full_name, email, phone, message, status, created_at", description: "Data prospek masuk." },
+          { name: "analytics_events", columns: "id, event_name, page_url, visitor_ip, created_at", description: "Log event pengunjung." }
+        ],
+        questions: [
+          "Apakah perlu CMS admin untuk mengubah teks landing page?",
+          "Apakah ada integrasi email otomatis saat form prospek diisi?",
+          "Apakah ada variasi tema Dark/Light mode?"
+        ]
+      };
+    }
+
+    // 3. Banking & Finance Archetype
+    if (
+      arch === "BANKING" ||
+      (arch === "AUTO" && (
+        combined.includes("perbankan") || combined.includes("keuangan") || combined.includes("fintech") ||
+        combined.includes("bank") || combined.includes("transfer") || combined.includes("rekening") ||
+        combined.includes("payment") || combined.includes("ledger")
+      ))
     ) {
       return {
         category: "Perbankan & Keuangan",
@@ -1759,18 +1855,21 @@
     await new Promise(resolve => setTimeout(resolve, 0));
 
     // Local idea-based seed (fallback / timeout safety net) — no user category field
-    const localRec = getCategoryStackRecommendation("", prompt);
+    const forcedArchetype = (DOM.inputProjArchetype && DOM.inputProjArchetype.value) || "AUTO";
+    const localRec = getCategoryStackRecommendation("", prompt, forcedArchetype);
     STATE.pendingProjectCategory = localRec.category || "General";
+    STATE.pendingProjectArchetype = forcedArchetype;
 
     const systemPrompt = `You are Minestack AI Domain Architect & Full-Stack Technology Consultant.
 
 CRITICAL METHOD — do this IN ORDER before recommending any technology:
-1) DEEPLY understand the user's idea. Define what the domain REALLY is in operational terms.
-   Example: "maintenance management" = an integrated CMMS/workshop system for recording & reporting work orders, preventive/corrective maintenance, assets, spare parts, technicians, downtime, and reliability KPIs — NOT a generic CRUD form.
+1) DEEPLY understand the user's idea and selected Archetype ("${forcedArchetype}"). Define what the domain REALLY is in operational terms.
+   Example: "Digital Archive / SOP" = integrated DMS for tree folder workspace, document versioning, PDF viewer modal, access matrix, and audit logs.
 2) Identify real-world actors/roles, core business processes (5-10 steps), and entities that must be persisted.
 3) Only THEN recommend category, tech stack, and a rich domain-specific schema.
 
 Project name: "${name}"
+Target Archetype: "${forcedArchetype}"
 User idea (raw): "${prompt}"
 
 You MUST produce:
@@ -2193,6 +2292,7 @@ MISSION: Produce a COMPLETE, production-grade '${docKey}' that truly reflects th
 
 Project: "${project.name}"
 Category: ${project.category || "General"}
+Target Archetype: ${project.archetype || STATE.pendingProjectArchetype || "AUTO"}
 
 RAW USER IDEA:
 "${project.prompt || ""}"
@@ -2330,7 +2430,8 @@ GLOBAL RULES (MANDATORY):
         "Prisma";
 
       // Local domain seed (metadata + fallback if AI gagal)
-      const localSeed = getCategoryStackRecommendation("", prompt) || {};
+      const forcedArchetype = (DOM.inputProjArchetype && DOM.inputProjArchetype.value) || "AUTO";
+      const localSeed = getCategoryStackRecommendation("", prompt, forcedArchetype) || {};
       const category = localSeed.category || STATE.pendingProjectCategory || "General";
 
       STATE.isConsulting = false;
@@ -2352,6 +2453,7 @@ GLOBAL RULES (MANDATORY):
         name: name,
         prompt: prompt,
         category: category,
+        archetype: forcedArchetype,
         frontend: selectedFrontend,
         backend: selectedBackend,
         db: selectedDb,
