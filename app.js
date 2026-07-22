@@ -896,44 +896,124 @@
   }
 
   /* ==========================================================================
+     SYSTEM AUTH & SERVER CONFIG HELPERS (PREVENT UNCAUGHT REFERENCE ERROR)
+     ========================================================================== */
+  function getSessionToken() {
+    return localStorage.getItem(AUTH_TOKEN_KEY) || "";
+  }
+
+  function seedAdminUser() {
+    try {
+      const users = getUsers();
+      if (!users.some(u => u.email === "admin@minestack.ai")) {
+        users.push({
+          email: "admin@minestack.ai",
+          name: "Admin Architect",
+          role: "admin",
+          tier: "pro",
+          createdAt: new Date().toISOString()
+        });
+        saveUsers(users);
+      }
+    } catch (e) {}
+  }
+
+  async function fetchServerConfig() {
+    try {
+      const res = await fetch("/api/config", { method: "GET" });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.success) {
+          STATE.serverConfig = data;
+          STATE.secureMode = true;
+          return data;
+        }
+      }
+    } catch (err) {}
+    STATE.secureMode = false;
+    return null;
+  }
+
+  async function validateSessionWithServer() {
+    try {
+      const token = getSessionToken();
+      if (!token) return false;
+      const res = await fetch("/api/auth?action=validate", {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        return data && data.success;
+      }
+    } catch (err) {}
+    return true;
+  }
+
+  async function apiAuth(payload) {
+    try {
+      const res = await fetch("/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        const data = await res.json();
+        return { ok: true, data };
+      }
+    } catch (e) {}
+    return { ok: false, data: null };
+  }
+
+  /* ==========================================================================
      1. INITIALIZATION & LOCALSTORAGE MANAGEMENT
      ========================================================================== */
   async function initApp() {
-    seedAdminUser();
-    bindAuthEvents();
-    setupMermaid();
-    bindEvents();
-    if (window.lucide) lucide.createIcons();
+    try {
+      seedAdminUser();
+      bindAuthEvents();
+      setupMermaid();
+      bindEvents();
+      if (window.lucide) lucide.createIcons();
 
-    // Detect Vercel serverless (/api/config) vs local XAMPP
-    await fetchServerConfig();
+      try {
+        await fetchServerConfig();
+      } catch (e) {}
 
-    const session = loadSession();
-    if (!session) {
-      showAuthGate();
-      loadConfigurationInputs();
-      return;
-    }
-
-    // Secure mode: re-validate signed session with server when possible
-    if (STATE.secureMode || getSessionToken()) {
-      const ok = await validateSessionWithServer();
-      if (!ok && STATE.secureMode) {
-        clearSession();
+      const session = loadSession();
+      if (!session) {
         showAuthGate();
         loadConfigurationInputs();
+        updateUserQuotaUI();
         return;
       }
-    }
 
-    showApp();
-    loadProjectsFromStorage();
-    loadConfigurationInputs();
-    renderProjectsGrid();
-    initLogsConsole();
-    updateMetricsUI();
-    updateUserQuotaUI();
-    if (window.lucide) lucide.createIcons();
+      try {
+        if (STATE.secureMode || getSessionToken()) {
+          const ok = await validateSessionWithServer();
+          if (!ok && STATE.secureMode) {
+            clearSession();
+            showAuthGate();
+            loadConfigurationInputs();
+            updateUserQuotaUI();
+            return;
+          }
+        }
+      } catch (e) {}
+
+      showApp();
+      loadProjectsFromStorage();
+      loadConfigurationInputs();
+      renderProjectsGrid();
+      initLogsConsole();
+      updateMetricsUI();
+      updateUserQuotaUI();
+      if (window.lucide) lucide.createIcons();
+    } catch (err) {
+      console.error("initApp error recovery:", err);
+      showAuthGate();
+      updateUserQuotaUI();
+    }
   }
 
   function bootAppAfterLogin() {
