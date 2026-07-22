@@ -678,29 +678,79 @@
     updateUserQuotaUI();
   }
 
-  function handleGoogleAuth() {
+  function handleGoogleAuth(e) {
+    if (e) {
+      if (typeof e.preventDefault === "function") e.preventDefault();
+      if (typeof e.stopPropagation === "function") e.stopPropagation();
+    }
+
     if (window.Swal) {
       Swal.fire({
-        title: "Google Gmail Sign-In",
-        text: "Ketikkan atau pilih akun Gmail Anda untuk daftar / masuk secara otomatis (Gratis 2x Generate AI):",
-        input: "email",
-        inputValue: "user.demo@gmail.com",
-        inputPlaceholder: "nama.anda@gmail.com",
+        title: `<div style="display:flex; align-items:center; justify-content:center; gap:10px;"><svg width="24" height="24" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.27v3.15C3.25 21.3 7.31 24 12 24z"/><path fill="#FBBC05" d="M5.28 14.27A7.26 7.26 0 0 1 4.9 12c0-.79.14-1.57.38-2.27V6.58H1.27A11.97 11.97 0 0 0 0 12c0 1.92.45 3.74 1.27 5.42l4.01-3.15z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.25 2.7 1.27 6.58l4.01 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/></svg> Sign In dengan Google</div>`,
+        html: `
+          <div style="text-align:left; font-size:0.9rem; color:#e2e8f0;">
+            <p style="margin-bottom:14px; color:#a1a1aa; text-align:center;">Pilih akun Gmail Anda untuk masuk ke Minestack AI Architect (Free 2x Generate):</p>
+            
+            <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:16px;">
+              <div id="swalOptGmail1" style="display:flex; align-items:center; gap:12px; padding:12px 14px; background:rgba(255,255,255,0.06); border:1px solid rgba(139,92,246,0.3); border-radius:10px; cursor:pointer; transition:all 0.2s ease;">
+                <div style="width:36px; height:36px; border-radius:50%; background:#ea4335; color:#ffffff; font-weight:800; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0;">D</div>
+                <div>
+                  <div style="font-weight:700; color:#ffffff;">Dermawan Purba</div>
+                  <div style="font-size:0.8rem; color:#a1a1aa;">dermawan.prb@gmail.com</div>
+                </div>
+              </div>
+
+              <div id="swalOptGmail2" style="display:flex; align-items:center; gap:12px; padding:12px 14px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px; cursor:pointer; transition:all 0.2s ease;">
+                <div style="width:36px; height:36px; border-radius:50%; background:#4285f4; color:#ffffff; font-weight:800; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0;">M</div>
+                <div>
+                  <div style="font-weight:700; color:#ffffff;">Minestack Demo User</div>
+                  <div style="font-size:0.8rem; color:#a1a1aa;">user.demo@gmail.com</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top:10px;">
+              <label style="display:block; font-size:0.8rem; color:#a1a1aa; margin-bottom:4px;">Atau ketikkan email Gmail Anda:</label>
+              <input type="email" id="swalCustomGmail" class="swal2-input" placeholder="nama.anda@gmail.com" style="margin:0; width:100%; box-sizing:border-box; background:rgba(255,255,255,0.08); color:#ffffff; border-color:rgba(255,255,255,0.2);">
+            </div>
+          </div>
+        `,
         showCancelButton: true,
-        confirmButtonText: "Lanjutkan dengan Gmail",
+        confirmButtonText: "Lanjutkan dengan Akun Gmail",
         cancelButtonText: "Batal",
         confirmButtonColor: "#8b5cf6",
         background: "#151126",
         color: "#ffffff",
-        inputValidator: (val) => {
-          if (!val || !val.includes("@")) {
-            return "Silakan masukkan email Gmail yang valid!";
+        didOpen: () => {
+          const opt1 = document.getElementById("swalOptGmail1");
+          const opt2 = document.getElementById("swalOptGmail2");
+          const custom = document.getElementById("swalCustomGmail");
+
+          if (opt1) {
+            opt1.addEventListener("click", () => {
+              if (custom) custom.value = "dermawan.prb@gmail.com";
+              Swal.clickConfirm();
+            });
           }
+          if (opt2) {
+            opt2.addEventListener("click", () => {
+              if (custom) custom.value = "user.demo@gmail.com";
+              Swal.clickConfirm();
+            });
+          }
+        },
+        preConfirm: () => {
+          const customVal = (document.getElementById("swalCustomGmail")?.value || "").trim();
+          if (!customVal || !customVal.includes("@")) {
+            Swal.showValidationMessage("Silakan klik salah satu akun di atas atau isi email Gmail yang valid!");
+            return false;
+          }
+          return customVal;
         }
       }).then((res) => {
         if (res.isConfirmed && res.value) {
           const cleanEmail = res.value.trim().toLowerCase();
-          const userName = cleanEmail.split("@")[0].replace(/[\._]/g, " ").replace(/\b\w/g, l => l.toUpperCase()) + " (Google)";
+          const userName = cleanEmail.split("@")[0].replace(/[\._]/g, " ").replace(/\b\w/g, l => l.toUpperCase());
 
           const users = getUsers();
           let user = users.find(u => (u.email || "").toLowerCase() === cleanEmail);
@@ -720,12 +770,12 @@
           showApp();
           bootAppAfterLogin();
           updateUserQuotaUI();
-          addLog("info", `Google Gmail Auth: ${cleanEmail}`);
+          addLog("info", `Google Gmail Auth Success: ${cleanEmail}`);
 
           Swal.fire({
             icon: "success",
             title: `Selamat Datang, ${userName}!`,
-            text: "Akun Gmail Anda aktif dengan Kuota 2x Free AI Generate.",
+            text: "Akun Gmail Anda terverifikasi dengan Kuota 2x Free AI Generate.",
             timer: 2200,
             showConfirmButton: false,
             background: "#151126",
@@ -734,7 +784,7 @@
         }
       });
     } else {
-      const email = prompt("Masukkan email Gmail Anda:", "user.demo@gmail.com");
+      const email = prompt("Masukkan email Gmail Anda:", "dermawan.prb@gmail.com");
       if (email) {
         const cleanEmail = email.trim().toLowerCase();
         const user = { email: cleanEmail, name: "Google User", provider: "google", role: "user" };
@@ -3966,8 +4016,15 @@ Jawab berdasarkan panduan produk + proyek + dokumen aktif di atas. Tolak topik d
 
   function bindEvents() {
     try {
-      // Global delegation listener for Dashboard navigation safety net
+      // Global delegation listener for Dashboard & Google Auth navigation safety net
       document.addEventListener("click", (e) => {
+        const googleTrigger = e.target.closest("#btnGoogleLogin, #btnGoogleRegister, .btn-google-auth");
+        if (googleTrigger) {
+          e.preventDefault();
+          e.stopPropagation();
+          handleGoogleAuth(e);
+          return;
+        }
         const dashTrigger = e.target.closest("#heroViewDashboardBtn, #hdrDashboardBtn, #sbDashBtn, #wsBackToDashBtn");
         if (dashTrigger) {
           e.preventDefault();
