@@ -1053,7 +1053,7 @@
       if (secureHint) secureHint.style.display = "block";
       const sc = STATE.serverConfig;
       if (DOM.connStatusBadge && sc) {
-        if (sc.aiProviderConfigured && sc.authConfigured) {
+        if (sc.aiProviderConfigured) {
           DOM.connStatusBadge.className = "connection-badge status-connected";
           DOM.connStatusBadge.textContent = "Server Ready";
         } else {
@@ -4017,16 +4017,8 @@ Jawab berdasarkan panduan produk + proyek + dokumen aktif di atas. Tolak topik d
       return;
     }
 
-    // Secure mode: test via /api/ai (server key + session)
+    // Secure mode: test via /api/ai (server key)
     if (STATE.secureMode) {
-      if (!getSessionToken()) {
-        DOM.connStatusBadge.className = "connection-badge status-disconnected";
-        DOM.connStatusBadge.textContent = "Login required";
-        addLog("error", "Secure mode: login dulu sebelum uji AI.");
-        alert("Login dulu. Di production, AI hanya jalan dengan session server.");
-        return;
-      }
-
       DOM.connStatusBadge.className = "connection-badge status-testing";
       DOM.connStatusBadge.textContent = "Testing...";
       addLog("info", `Testing secure /api/ai (model: ${testModel}) ...`);

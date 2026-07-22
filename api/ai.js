@@ -113,7 +113,7 @@ module.exports = async function handler(req, res) {
     return json(res, 405, { success: false, message: "Method not allowed" });
   }
 
-  const requireAuth = String(process.env.AI_REQUIRE_AUTH || "true").toLowerCase() !== "false";
+  const requireAuth = String(process.env.AI_REQUIRE_AUTH || "false").toLowerCase() === "true";
   const secret = process.env.SESSION_SECRET || "";
 
   if (requireAuth) {
