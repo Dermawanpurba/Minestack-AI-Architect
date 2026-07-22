@@ -17,11 +17,12 @@
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
 
-  <!-- External Libraries: Marked.js, Mermaid.js, Highlight.js, JSZip -->
+  <!-- External Libraries: Marked.js, Mermaid.js, Highlight.js, JSZip, SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
   <!-- Pre-loaded Sample Data & Application Logic -->
   <script src="sample_data.js"></script>
@@ -53,11 +54,27 @@
         <!-- LOGIN -->
         <form id="authLoginForm" class="auth-form" autocomplete="on">
           <h2 class="auth-title">Masuk ke Minestack</h2>
-          <p class="auth-desc">Gunakan akun admin atau akun yang sudah Anda daftarkan.</p>
+          <p class="auth-desc">Gunakan akun Gmail atau akun yang sudah Anda daftarkan.</p>
+
+          <button type="button" class="btn-google-auth" id="btnGoogleLogin" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 10px 16px; background: #ffffff; color: #1f2937; font-weight: 700; border-radius: var(--radius-sm); border: 1px solid #e5e7eb; margin-bottom: 14px; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">
+            <svg width="18" height="18" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+              <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.27v3.15C3.25 21.3 7.31 24 12 24z"/>
+              <path fill="#FBBC05" d="M5.28 14.27A7.26 7.26 0 0 1 4.9 12c0-.79.14-1.57.38-2.27V6.58H1.27A11.97 11.97 0 0 0 0 12c0 1.92.45 3.74 1.27 5.42l4.01-3.15z"/>
+              <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.25 2.7 1.27 6.58l4.01 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+            </svg>
+            Masuk dengan Google (Gmail)
+          </button>
+
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
+            <div style="flex: 1; height: 1px; background: rgba(255,255,255,0.1);"></div>
+            <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 500;">atau pakai email</span>
+            <div style="flex: 1; height: 1px; background: rgba(255,255,255,0.1);"></div>
+          </div>
 
           <div class="form-group">
-            <label class="form-label" for="loginEmail">Email</label>
-            <input class="form-input" type="email" id="loginEmail" name="email" placeholder="nama@email.com" required>
+            <label class="form-label" for="loginEmail">Email Gmail</label>
+            <input class="form-input" type="email" id="loginEmail" name="email" placeholder="nama@gmail.com" required>
           </div>
           <div class="form-group">
             <label class="form-label" for="loginPassword">Password</label>
@@ -80,16 +97,32 @@
 
         <!-- REGISTER -->
         <form id="authRegisterForm" class="auth-form" style="display:none;" autocomplete="on">
-          <h2 class="auth-title">Daftar Pengguna Baru</h2>
-          <p class="auth-desc">Buat akun untuk mengakses workspace blueprint Minestack.</p>
+          <h2 class="auth-title">Daftar Akun Baru (Free 2x Generate)</h2>
+          <p class="auth-desc">Pengguna baru mendapatkan <strong>2x Free AI Generate</strong> gratis.</p>
+
+          <button type="button" class="btn-google-auth" id="btnGoogleRegister" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 10px 16px; background: #ffffff; color: #1f2937; font-weight: 700; border-radius: var(--radius-sm); border: 1px solid #e5e7eb; margin-bottom: 14px; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">
+            <svg width="18" height="18" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+              <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.27v3.15C3.25 21.3 7.31 24 12 24z"/>
+              <path fill="#FBBC05" d="M5.28 14.27A7.26 7.26 0 0 1 4.9 12c0-.79.14-1.57.38-2.27V6.58H1.27A11.97 11.97 0 0 0 0 12c0 1.92.45 3.74 1.27 5.42l4.01-3.15z"/>
+              <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.25 2.7 1.27 6.58l4.01 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+            </svg>
+            Daftar Langsung dengan Gmail
+          </button>
+
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
+            <div style="flex: 1; height: 1px; background: rgba(255,255,255,0.1);"></div>
+            <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 500;">atau daftar email</span>
+            <div style="flex: 1; height: 1px; background: rgba(255,255,255,0.1);"></div>
+          </div>
 
           <div class="form-group">
-            <label class="form-label" for="regName">Nama lengkap</label>
+            <label class="form-label" for="regName">Nama Lengkap</label>
             <input class="form-input" type="text" id="regName" name="name" placeholder="Nama Anda" required minlength="2">
           </div>
           <div class="form-group">
-            <label class="form-label" for="regEmail">Email</label>
-            <input class="form-input" type="email" id="regEmail" name="email" placeholder="nama@email.com" required>
+            <label class="form-label" for="regEmail">Email (Wajib Gmail)</label>
+            <input class="form-input" type="email" id="regEmail" name="email" placeholder="nama@gmail.com" required>
           </div>
           <div class="form-group">
             <label class="form-label" for="regPassword">Password</label>
@@ -101,7 +134,7 @@
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label" for="regPassword2">Ulangi password</label>
+            <label class="form-label" for="regPassword2">Ulangi Password</label>
             <input class="form-input" type="password" id="regPassword2" name="password2" placeholder="Ulangi password" required minlength="6">
           </div>
 
@@ -110,7 +143,7 @@
 
           <button type="submit" class="btn-primary auth-submit" id="registerSubmitBtn">
             <i data-lucide="user-plus" style="width: 16px; height: 16px;"></i>
-            Buat Akun
+            Buat Akun Free (2x Generate)
           </button>
           <p class="auth-switch-hint">Sudah punya akun? <button type="button" class="auth-link-btn" id="goToLoginBtn">Masuk</button></p>
         </form>
@@ -143,6 +176,9 @@
     </nav>
 
     <div class="header-right">
+      <div id="userQuotaBadge" class="user-quota-badge" style="display: flex; align-items: center; gap: 6px; padding: 5px 12px; background: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.35); border-radius: 20px; font-size: 0.8rem; font-weight: 700; color: #d8b4fe; cursor: pointer;" title="Klik untuk perpanjang atau upgrade ke Pro Rp 50.000/bln">
+        ⚡ <span id="lblUserQuotaText">2/2 Free Generate</span>
+      </div>
       <div class="user-profile">
         <i data-lucide="user" style="width: 14px; height: 14px;"></i>
         <span id="hdrUserEmail">—</span>
@@ -696,55 +732,122 @@
       </section>
 
       <!-- ===================================================================
-           VIEW 8: BILLING & LIMITS
+           VIEW 8: BILLING & LIMITS (PILIHAN PAKET LANGGANAN)
            =================================================================== -->
       <section class="view-container" id="viewBilling">
-        <div class="dashboard-container" style="max-width: 800px;">
+        <div class="dashboard-container" style="max-width: 960px;">
           <div class="dashboard-header">
             <div class="dashboard-title-group">
               <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
                 <i data-lucide="wallet" style="width: 28px; height: 28px; color: var(--accent-green);"></i>
-                <h1>Tier & Limit Pelanggan</h1>
+                <h1>Paket Langganan & Kuota AI</h1>
               </div>
-              <p>Rincian paket langganan Anda, kuota token, dan tagihan aktif.</p>
+              <p>Pengguna baru mendapatkan <strong>2x Free AI Generate</strong>. Berlangganan Pro untuk AI Blueprint Unlimited.</p>
             </div>
           </div>
 
-          <div class="settings-card"
-            style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 32px;">
-            <div
-              style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--border-color);">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 10px;">
+            
+            <!-- PLAN FREE -->
+            <div class="settings-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 28px; display: flex; flex-direction: column; justify-content: space-between;">
               <div>
-                <span class="badge-capsule"
-                  style="background: rgba(16, 185, 129, 0.15); color: var(--accent-green); border-color: rgba(16, 185, 129, 0.3); margin: 0 0 8px 0;">PORTAL
-                  ENTERPRISE</span>
-                <h3 style="font-size: 1.5rem;">Minestack AI Pro</h3>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+                  <div>
+                    <span class="badge-capsule" style="background: rgba(148, 163, 184, 0.15); color: #cbd5e1; border-color: rgba(148, 163, 184, 0.3); margin: 0 0 8px 0;">STARTER</span>
+                    <h3 style="font-size: 1.4rem; color: #ffffff;">Paket Free</h3>
+                  </div>
+                  <div style="text-align: right;">
+                    <span style="font-size: 1.6rem; font-weight: 800; color: #ffffff;">Rp 0</span>
+                    <span style="color: var(--text-dim); font-size: 0.85rem;">/ selamanya</span>
+                  </div>
+                </div>
+                <p style="font-size: 0.86rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 20px;">
+                  Sangat cocok untuk mencoba membuat 2 proyek blueprint software pertama Anda.
+                </p>
+
+                <ul style="list-style: none; display: flex; flex-direction: column; gap: 10px; font-size: 0.88rem; color: #e2e8f0; padding: 0;">
+                  <li style="display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="check" style="width: 16px; height: 16px; color: #10b981;"></i>
+                    <strong>2x Free AI Blueprint Generate</strong>
+                  </li>
+                  <li style="display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="check" style="width: 16px; height: 16px; color: #10b981;"></i>
+                    Lengkap 6 Dokumen Produksi
+                  </li>
+                  <li style="display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="check" style="width: 16px; height: 16px; color: #10b981;"></i>
+                    Preview Markdown & Diagram Mermaid
+                  </li>
+                  <li style="display: flex; align-items: center; gap: 8px; opacity: 0.5;">
+                    <i data-lucide="x" style="width: 16px; height: 16px; color: #ef4444;"></i>
+                    <span style="text-decoration: line-through;">Unlimited AI Blueprint Generate</span>
+                  </li>
+                  <li style="display: flex; align-items: center; gap: 8px; opacity: 0.5;">
+                    <i data-lucide="x" style="width: 16px; height: 16px; color: #ef4444;"></i>
+                    <span style="text-decoration: line-through;">Prioritas AI Copilot Assistant</span>
+                  </li>
+                </ul>
               </div>
-              <div style="text-align: right;">
-                <span style="font-size: 1.8rem; font-weight: 800; color: #ffffff;">$49</span>
-                <span style="color: var(--text-dim); font-size: 0.85rem;">/ bulan</span>
+
+              <div style="margin-top: 28px;">
+                <button class="btn-outline" id="btnCurrentFreePlan" style="width: 100%; justify-content: center; padding: 10px 16px;" disabled>
+                  Paket Gratis Aktif
+                </button>
               </div>
             </div>
 
-            <div style="display: flex; flex-direction: column; gap: 16px;">
+            <!-- PLAN PRO (BEST VALUE) -->
+            <div class="settings-card" style="background: linear-gradient(145deg, rgba(21, 17, 38, 0.98) 0%, rgba(30, 16, 50, 0.98) 100%); border: 2px solid #8b5cf6; border-radius: var(--radius-lg); padding: 28px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 12px 35px rgba(139, 92, 246, 0.25); position: relative;">
+              <div style="position: absolute; top: -12px; right: 20px; background: linear-gradient(135deg, #8b5cf6, #d946ef); color: #ffffff; font-size: 0.72rem; font-weight: 800; padding: 3px 12px; border-radius: 12px; letter-spacing: 0.08em; text-transform: uppercase;">
+                REKOMENDASI UMAT
+              </div>
               <div>
-                <div style="display: flex; justify-content: space-between; font-size: 0.88rem; margin-bottom: 6px;">
-                  <span style="color: var(--text-muted);">Kuota Bulanan AI Blueprint</span>
-                  <span style="font-weight: 600;">Unlimited</span>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+                  <div>
+                    <span class="badge-capsule" style="background: rgba(139, 92, 246, 0.25); color: #d8b4fe; border-color: rgba(168, 85, 247, 0.5); margin: 0 0 8px 0;">PRO ARCHITECT</span>
+                    <h3 style="font-size: 1.4rem; color: #ffffff;">Paket Pro Unlimited</h3>
+                  </div>
+                  <div style="text-align: right;">
+                    <span style="font-size: 1.6rem; font-weight: 800; color: #ffffff;">Rp 50.000</span>
+                    <span style="color: #c084fc; font-size: 0.85rem; display: block;">/ bulan</span>
+                  </div>
                 </div>
-                <div
-                  style="width: 100%; height: 6px; background: rgba(255, 255, 255, 0.05); border-radius: 3px; overflow: hidden;">
-                  <div style="width: 100%; height: 100%; background: var(--accent-green);"></div>
-                </div>
+                <p style="font-size: 0.86rem; color: #cbd5e1; line-height: 1.5; margin-bottom: 20px;">
+                  Akses tanpa batas ke seluruh AI Engine, 8 Archetype Sistem, & Ekspor Full ZIP Package.
+                </p>
+
+                <ul style="list-style: none; display: flex; flex-direction: column; gap: 10px; font-size: 0.88rem; color: #f8fafc; padding: 0;">
+                  <li style="display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="sparkles" style="width: 16px; height: 16px; color: #c084fc;"></i>
+                    <strong>UNLIMITED AI Blueprint Generation</strong>
+                  </li>
+                  <li style="display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="check-circle" style="width: 16px; height: 16px; color: #10b981;"></i>
+                    Model AI Tercepat & Terakurat (Combo1 Pro)
+                  </li>
+                  <li style="display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="check-circle" style="width: 16px; height: 16px; color: #10b981;"></i>
+                    Dukungan 8 Archetype (ERP, DMS, Landing, E-Commerce)
+                  </li>
+                  <li style="display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="check-circle" style="width: 16px; height: 16px; color: #10b981;"></i>
+                    Download FULL ZIP Package Pro
+                  </li>
+                  <li style="display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="check-circle" style="width: 16px; height: 16px; color: #10b981;"></i>
+                    Akses Prioritas AI Copilot Assistant
+                  </li>
+                </ul>
               </div>
 
-              <div>
-                <div style="display: flex; justify-content: space-between; font-size: 0.88rem; margin-bottom: 6px;">
-                  <span style="color: var(--text-muted);">Masa Berlaku Langganan</span>
-                  <span style="font-weight: 600; color: #ffffff;">Aktif (Perpanjangan otomatis: 20 Agustus 2026)</span>
-                </div>
+              <div style="margin-top: 28px;">
+                <button class="btn-primary" id="btnSubscribePro" style="width: 100%; justify-content: center; padding: 12px 18px; font-size: 0.95rem; background: linear-gradient(135deg, #8b5cf6, #d946ef); color: #ffffff; border: none; box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4);">
+                  <i data-lucide="zap" style="width: 16px; height: 16px;"></i>
+                  Berlangganan Pro — Rp 50.000 / Bulan
+                </button>
               </div>
             </div>
+
           </div>
         </div>
       </section>

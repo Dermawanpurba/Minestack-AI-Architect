@@ -581,6 +581,227 @@
     addLog("info", "User logged out.");
   }
 
+  /* ==========================================================================
+     FREEMIUM QUOTA (2X FREE AI GENERATE) & PRO SUBSCRIPTION (RP 50.000 / BULAN)
+     ========================================================================== */
+  function getUserQuotaState() {
+    const session = loadSession() || {};
+    const email = (session.email || "guest").toLowerCase();
+    const quotaKey = `minestack_quota_${email}`;
+    let state = { tier: session.role === "admin" ? "pro" : "free", aiUsed: 0, freeQuota: 2 };
+
+    const stored = localStorage.getItem(quotaKey);
+    if (stored) {
+      try {
+        state = { ...state, ...JSON.parse(stored) };
+      } catch (e) {}
+    } else {
+      localStorage.setItem(quotaKey, JSON.stringify(state));
+    }
+    return state;
+  }
+
+  function updateUserQuotaUI() {
+    const quota = getUserQuotaState();
+    const badgeTextEl = document.getElementById("lblUserQuotaText");
+    const badgeContainer = document.getElementById("userQuotaBadge");
+
+    if (quota.tier === "pro") {
+      if (badgeTextEl) badgeTextEl.textContent = "PRO MEMBER (Unlimited)";
+      if (badgeContainer) {
+        badgeContainer.style.background = "linear-gradient(135deg, rgba(139, 92, 246, 0.35), rgba(217, 70, 239, 0.25))";
+        badgeContainer.style.borderColor = "rgba(168, 85, 247, 0.6)";
+        badgeContainer.style.color = "#ffffff";
+      }
+    } else {
+      const remaining = Math.max(0, quota.freeQuota - (quota.aiUsed || 0));
+      if (badgeTextEl) badgeTextEl.textContent = `${remaining}/${quota.freeQuota} Free Generate`;
+      if (badgeContainer) {
+        badgeContainer.style.background = "rgba(139, 92, 246, 0.15)";
+        badgeContainer.style.borderColor = "rgba(139, 92, 246, 0.35)";
+        badgeContainer.style.color = "#d8b4fe";
+      }
+    }
+  }
+
+  function checkAiGenerationAllowed() {
+    const quota = getUserQuotaState();
+    if (quota.tier === "pro") return true;
+
+    const remaining = quota.freeQuota - (quota.aiUsed || 0);
+    if (remaining > 0) return true;
+
+    if (window.Swal) {
+      Swal.fire({
+        icon: "warning",
+        title: "⚡ Kuota AI Gratis (2/2) Anda Habis!",
+        html: `
+          <p style="font-size:0.95rem; color:#e2e8f0; line-height:1.6; margin-bottom:16px;">
+            Pengguna baru mendapatkan <strong>2x Free AI Generate</strong>.<br>
+            Untuk melanjutkan generate blueprint tanpa batas, silakan berlangganan ke <strong>Paket Pro Architect (Rp 50.000 / bulan)</strong>.
+          </p>
+          <div style="background:rgba(139, 92, 246, 0.15); padding:12px; border-radius:8px; border:1px solid rgba(168, 85, 247, 0.4); text-align:left; font-size:0.85rem; color:#d8b4fe;">
+            🚀 <strong>Keunggulan Paket Pro Rp 50.000/Bulan:</strong><br>
+            • Unlimited AI Blueprint Generation<br>
+            • Akses 8 Archetype Sistem (ERP, DMS, Landing Page, E-Commerce)<br>
+            • Model AI Tercepat & Terakurat<br>
+            • Download FULL ZIP Package Pro
+          </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: "Berlangganan Pro Rp 50.000 / Bulan",
+        cancelButtonText: "Batal",
+        confirmButtonColor: "#8b5cf6",
+        background: "#151126",
+        color: "#ffffff"
+      }).then((res) => {
+        if (res.isConfirmed) {
+          switchView("billing");
+          showSubscriptionPaymentModal();
+        }
+      });
+    } else {
+      alert("Kuota AI Gratis (2/2) Anda telah habis! Silakan berlangganan Paket Pro Rp 50.000 / bulan di menu Tier & Limit.");
+      switchView("billing");
+    }
+    return false;
+  }
+
+  function consumeAiQuota() {
+    const quota = getUserQuotaState();
+    if (quota.tier === "pro") return;
+
+    quota.aiUsed = (quota.aiUsed || 0) + 1;
+    const session = loadSession() || {};
+    const email = (session.email || "guest").toLowerCase();
+    localStorage.setItem(`minestack_quota_${email}`, JSON.stringify(quota));
+    updateUserQuotaUI();
+  }
+
+  function handleGoogleAuth() {
+    if (window.Swal) {
+      Swal.fire({
+        title: "Google Gmail Sign-In",
+        text: "Ketikkan atau pilih akun Gmail Anda untuk daftar / masuk secara otomatis (Gratis 2x Generate AI):",
+        input: "email",
+        inputValue: "user.demo@gmail.com",
+        inputPlaceholder: "nama.anda@gmail.com",
+        showCancelButton: true,
+        confirmButtonText: "Lanjutkan dengan Gmail",
+        cancelButtonText: "Batal",
+        confirmButtonColor: "#8b5cf6",
+        background: "#151126",
+        color: "#ffffff",
+        inputValidator: (val) => {
+          if (!val || !val.includes("@")) {
+            return "Silakan masukkan email Gmail yang valid!";
+          }
+        }
+      }).then((res) => {
+        if (res.isConfirmed && res.value) {
+          const cleanEmail = res.value.trim().toLowerCase();
+          const userName = cleanEmail.split("@")[0].replace(/[\._]/g, " ").replace(/\b\w/g, l => l.toUpperCase()) + " (Google)";
+
+          const users = getUsers();
+          let user = users.find(u => (u.email || "").toLowerCase() === cleanEmail);
+          if (!user) {
+            user = {
+              email: cleanEmail,
+              name: userName,
+              provider: "google",
+              role: "user",
+              createdAt: new Date().toISOString()
+            };
+            users.push(user);
+            saveUsers(users);
+          }
+
+          saveSession(user);
+          showApp();
+          bootAppAfterLogin();
+          updateUserQuotaUI();
+          addLog("info", `Google Gmail Auth: ${cleanEmail}`);
+
+          Swal.fire({
+            icon: "success",
+            title: `Selamat Datang, ${userName}!`,
+            text: "Akun Gmail Anda aktif dengan Kuota 2x Free AI Generate.",
+            timer: 2200,
+            showConfirmButton: false,
+            background: "#151126",
+            color: "#ffffff"
+          });
+        }
+      });
+    } else {
+      const email = prompt("Masukkan email Gmail Anda:", "user.demo@gmail.com");
+      if (email) {
+        const cleanEmail = email.trim().toLowerCase();
+        const user = { email: cleanEmail, name: "Google User", provider: "google", role: "user" };
+        saveSession(user);
+        showApp();
+        bootAppAfterLogin();
+        updateUserQuotaUI();
+      }
+    }
+  }
+
+  function showSubscriptionPaymentModal() {
+    if (window.Swal) {
+      Swal.fire({
+        title: "💳 Berlangganan Pro Architect (Rp 50.000/bln)",
+        html: `
+          <div style="text-align:left; font-size:0.9rem; color:#e2e8f0; line-height:1.5;">
+            <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(16,185,129,0.12); padding:12px 16px; border-radius:8px; margin-bottom:16px; border:1px solid rgba(16,185,129,0.3);">
+              <span>Tagihan Bulanan</span>
+              <strong style="font-size:1.25rem; color:#10b981;">Rp 50.000 / Bulan</strong>
+            </div>
+
+            <p style="margin-bottom:10px; font-weight:700; color:#ffffff;">Metode Pembayaran Instan:</p>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px;">
+              <div style="border:2px solid #8b5cf6; background:rgba(139, 92, 246, 0.2); padding:12px; border-radius:8px; text-align:center; font-weight:700; color:#ffffff;">
+                📱 QRIS / E-Wallet
+              </div>
+              <div style="border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.03); padding:12px; border-radius:8px; text-align:center; font-weight:600; color:#cbd5e1;">
+                🏦 Bank Transfer (BCA)
+              </div>
+            </div>
+
+            <div style="text-align:center; padding:16px; background:#ffffff; border-radius:10px; margin-bottom:14px;">
+              <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=MINESTACK_PRO_50000_MONTHLY" alt="QRIS Rp 50.000" style="display:block; margin:0 auto 8px auto; width:135px; height:135px;">
+              <span style="font-size:0.8rem; color:#0f172a; font-weight:800; display:block;">NMAS: MINESTACK ARCHITECT PRO</span>
+              <span style="font-size:0.75rem; color:#475569; display:block;">Scan QRIS via GoPay, OVO, ShopeePay, Dana, BCA Mobile</span>
+            </div>
+          </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: "Konfirmasi Pembayaran Instan (Rp 50.000)",
+        cancelButtonText: "Batal",
+        confirmButtonColor: "#10b981",
+        background: "#151126",
+        color: "#ffffff"
+      }).then((res) => {
+        if (res.isConfirmed) {
+          const quota = getUserQuotaState();
+          quota.tier = "pro";
+          const session = loadSession() || {};
+          const email = (session.email || "guest").toLowerCase();
+          localStorage.setItem(`minestack_quota_${email}`, JSON.stringify(quota));
+          updateUserQuotaUI();
+
+          Swal.fire({
+            icon: "success",
+            title: "🎉 Langganan Pro Berhasil Diaktifkan!",
+            html: "Selamat! Akun Anda kini aktif sebagai <strong>Pro Member</strong> dengan <strong>Unlimited AI Blueprint Generation</strong>.",
+            confirmButtonColor: "#8b5cf6",
+            background: "#151126",
+            color: "#ffffff"
+          });
+        }
+      });
+    }
+  }
+
   function bindAuthEvents() {
     const tabLogin = document.getElementById("authTabLogin");
     const tabRegister = document.getElementById("authTabRegister");
@@ -589,8 +810,11 @@
     const loginForm = document.getElementById("authLoginForm");
     const registerForm = document.getElementById("authRegisterForm");
     const logoutBtn = document.getElementById("hdrLogoutBtn");
-    const loginToggle = document.getElementById("loginTogglePass");
-    const regToggle = document.getElementById("regTogglePass");
+    const btnGoogleLogin = document.getElementById("btnGoogleLogin");
+    const btnGoogleRegister = document.getElementById("btnGoogleRegister");
+
+    if (btnGoogleLogin) btnGoogleLogin.addEventListener("click", handleGoogleAuth);
+    if (btnGoogleRegister) btnGoogleRegister.addEventListener("click", handleGoogleAuth);
 
     if (tabLogin) tabLogin.addEventListener("click", () => switchAuthTab("login"));
     if (tabRegister) tabRegister.addEventListener("click", () => switchAuthTab("register"));
@@ -654,6 +878,7 @@
     renderProjectsGrid();
     initLogsConsole();
     updateMetricsUI();
+    updateUserQuotaUI();
     if (window.lucide) lucide.createIcons();
   }
 
@@ -666,6 +891,7 @@
       renderProjectsGrid();
       initLogsConsole();
       updateMetricsUI();
+      updateUserQuotaUI();
       switchView("landing");
     } catch (err) {
       console.error("bootAppAfterLogin failed", err);
@@ -2395,8 +2621,10 @@ GLOBAL RULES (MANDATORY):
    * Buat project dari form utama + tech stack, lalu AI engine mendetailkan
    * 6 dokumen: PRD, TECH_STACK, ARCHITECTURE, DATABASE, API, DEPLOYMENT.
    */
-  function handleCreateLocalBlueprint() {
+  async function handleCreateLocalBlueprint() {
     try {
+      if (!checkAiGenerationAllowed()) return;
+
       if (!Array.isArray(STATE.projects)) STATE.projects = [];
 
       const nameEl = DOM.inputProjName || document.getElementById("inputProjName");
@@ -2494,6 +2722,7 @@ GLOBAL RULES (MANDATORY):
       STATE.pendingTables = [];
 
       // Open workspace, then AI generate all 6 docs (stack sudah di project)
+      consumeAiQuota();
       openProjectWorkspace(newProject.id, { skipAutoGenerate: true });
       prefetchProjectDocuments(newProject.id, true).catch(err => {
         console.error("prefetchProjectDocuments failed", err);
