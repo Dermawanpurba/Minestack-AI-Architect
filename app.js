@@ -588,12 +588,13 @@
     const session = loadSession() || {};
     const email = (session.email || "guest").toLowerCase();
     const quotaKey = `minestack_quota_${email}`;
-    let state = { tier: session.role === "admin" ? "pro" : "free", aiUsed: 0, freeQuota: 2 };
+    let state = { tier: session.role === "admin" ? "pro" : "free", aiUsed: 0, freeQuota: 5 };
 
     const stored = localStorage.getItem(quotaKey);
     if (stored) {
       try {
         state = { ...state, ...JSON.parse(stored) };
+        if (state.tier !== "pro") state.freeQuota = 5; // Ensure upgraded 5x free quota for all members
       } catch (e) {}
     } else {
       localStorage.setItem(quotaKey, JSON.stringify(state));
@@ -628,15 +629,21 @@
       }
     }
 
-    // Role-based UI Visibility: Hide API Keys & Model Catalog for Member mode (role !== "admin")
+    // Role-based UI Visibility: Hide Admin-only features for Member mode (role !== "admin")
     const isAdmin = isUserAdmin();
     const sbKeysBtn = document.getElementById("sbKeysBtn");
     const navLinkCatalog = document.getElementById("navLinkCatalog");
     const sbZapBtn = document.getElementById("sbZapBtn");
+    const sbMetricsBtn = document.getElementById("sbMetricsBtn");
+    const sbSignalsBtn = document.getElementById("sbSignalsBtn");
+    const navLinkBlog = document.getElementById("navLinkBlog");
 
     if (sbKeysBtn) sbKeysBtn.style.display = isAdmin ? "flex" : "none";
     if (navLinkCatalog) navLinkCatalog.style.display = isAdmin ? "inline-flex" : "none";
     if (sbZapBtn) sbZapBtn.style.display = isAdmin ? "flex" : "none";
+    if (sbMetricsBtn) sbMetricsBtn.style.display = isAdmin ? "flex" : "none";
+    if (sbSignalsBtn) sbSignalsBtn.style.display = isAdmin ? "flex" : "none";
+    if (navLinkBlog) navLinkBlog.style.display = isAdmin ? "inline-flex" : "none";
   }
 
   function checkAiGenerationAllowed() {
@@ -649,10 +656,10 @@
     if (window.Swal) {
       Swal.fire({
         icon: "warning",
-        title: "⚡ Kuota AI Gratis (2/2) Anda Habis!",
+        title: "⚡ Kuota AI Gratis (5/5) Anda Habis!",
         html: `
           <p style="font-size:0.95rem; color:#e2e8f0; line-height:1.6; margin-bottom:16px;">
-            Pengguna baru mendapatkan <strong>2x Free AI Generate</strong>.<br>
+            Pengguna baru mendapatkan <strong>5x Free AI Generate</strong>.<br>
             Untuk melanjutkan generate blueprint tanpa batas, silakan berlangganan ke <strong>Paket Pro Architect (Rp 50.000 / bulan)</strong>.
           </p>
           <div style="background:rgba(139, 92, 246, 0.15); padding:12px; border-radius:8px; border:1px solid rgba(168, 85, 247, 0.4); text-align:left; font-size:0.85rem; color:#d8b4fe;">
@@ -676,7 +683,7 @@
         }
       });
     } else {
-      alert("Kuota AI Gratis (2/2) Anda telah habis! Silakan berlangganan Paket Pro Rp 50.000 / bulan di menu Tier & Limit.");
+      alert("Kuota AI Gratis (5/5) Anda telah habis! Silakan berlangganan Paket Pro Rp 50.000 / bulan di menu Tier & Limit.");
       switchView("billing");
     }
     return false;
@@ -1100,19 +1107,19 @@
      2. ROUTING & VIEW SWITCHING
      ========================================================================== */
   function switchView(viewName) {
-    // Restrict API Keys & Model Settings to Admin users only
-    if (!isUserAdmin() && (viewName === "keys" || viewName === "integrations")) {
+    // Restrict API Keys, Model Settings, Metrics, and Signals to Admin users only
+    if (!isUserAdmin() && (viewName === "keys" || viewName === "integrations" || viewName === "metrics" || viewName === "signals")) {
       if (window.Swal) {
         Swal.fire({
           icon: "info",
           title: "🔒 Akses Terbatas Admin",
-          text: "Pengaturan API Keys & Katalog Model hanya dapat diakses oleh Administrator.",
+          text: "Fitur Metrics, Signals, API Keys & Model Settings hanya dapat diakses oleh Administrator.",
           confirmButtonColor: "#8b5cf6",
           background: "#151126",
           color: "#ffffff"
         });
       } else {
-        alert("Pengaturan API Keys & Katalog Model hanya dapat diakses oleh Administrator.");
+        alert("Fitur Metrics, Signals, API Keys & Model Settings hanya dapat diakses oleh Administrator.");
       }
       viewName = "landing";
     }
