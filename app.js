@@ -601,6 +601,11 @@
     return state;
   }
 
+  function isUserAdmin() {
+    const session = loadSession() || {};
+    return session.role === "admin";
+  }
+
   function updateUserQuotaUI() {
     const quota = getUserQuotaState();
     const badgeTextEl = document.getElementById("lblUserQuotaText");
@@ -622,6 +627,16 @@
         badgeContainer.style.color = "#d8b4fe";
       }
     }
+
+    // Role-based UI Visibility: Hide API Keys & Model Catalog for Member mode (role !== "admin")
+    const isAdmin = isUserAdmin();
+    const sbKeysBtn = document.getElementById("sbKeysBtn");
+    const navLinkCatalog = document.getElementById("navLinkCatalog");
+    const sbZapBtn = document.getElementById("sbZapBtn");
+
+    if (sbKeysBtn) sbKeysBtn.style.display = isAdmin ? "flex" : "none";
+    if (navLinkCatalog) navLinkCatalog.style.display = isAdmin ? "inline-flex" : "none";
+    if (sbZapBtn) sbZapBtn.style.display = isAdmin ? "flex" : "none";
   }
 
   function checkAiGenerationAllowed() {
@@ -1085,6 +1100,23 @@
      2. ROUTING & VIEW SWITCHING
      ========================================================================== */
   function switchView(viewName) {
+    // Restrict API Keys & Model Settings to Admin users only
+    if (!isUserAdmin() && (viewName === "keys" || viewName === "integrations")) {
+      if (window.Swal) {
+        Swal.fire({
+          icon: "info",
+          title: "🔒 Akses Terbatas Admin",
+          text: "Pengaturan API Keys & Katalog Model hanya dapat diakses oleh Administrator.",
+          confirmButtonColor: "#8b5cf6",
+          background: "#151126",
+          color: "#ffffff"
+        });
+      } else {
+        alert("Pengaturan API Keys & Katalog Model hanya dapat diakses oleh Administrator.");
+      }
+      viewName = "landing";
+    }
+
     STATE.activeView = viewName;
 
     // Hide all view containers
