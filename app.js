@@ -1708,6 +1708,70 @@
     const combined = `${cat} ${idea}`;
     const arch = (forcedArchetype || "AUTO").toUpperCase();
 
+    // 0. B2B Heavy Equipment Sparepart & Suku Cadang E-Commerce Archetype
+    if (
+      arch === "ECOMMERCE" ||
+      (arch === "AUTO" && (
+        combined.includes("sparepart") || combined.includes("spare part") || combined.includes("suku cadang") ||
+        combined.includes("jual") || combined.includes("jualan") || combined.includes("penjualan") ||
+        combined.includes("caterpillar") || combined.includes("komatsu") || combined.includes("kobelco") ||
+        combined.includes("hitachi") || combined.includes("volvo") || combined.includes("hino") ||
+        combined.includes("sitrak") || combined.includes("part number") || combined.includes("oem") ||
+        combined.includes("tokosparepart") || combined.includes("distributor sparepart") || combined.includes("alat berat")
+      ))
+    ) {
+      return {
+        category: "E-Commerce & B2B Sparepart Sales (Alat Berat & Suku Cadang)",
+        domainDefinition: "Platform E-Commerce & Katalog B2B Jual-Beli Sparepart / Suku Cadang Alat Berat & Kendaraan (Caterpillar, Komatsu, Kobelco, Hitachi, Volvo, Hino, Sitrak, dll.) terintegrasi dengan pencarian Nomor Part (OEM/Aftermarket), Stok Real-time Per Gudang, Pembuatan Quotation Penawaran Harga B2B, Checkout Pesanan, Faktur Invoice, dan Armada Pengiriman Cargo.",
+        coreProcesses: [
+          "Pencarian Katalog Sparepart (Filter Merk Alat Berat, Model Unit, & OEM Part Number)",
+          "Manajemen Stok & Varian (Part Original OEM vs Aftermarket, Harga Grosir/Eceran)",
+          "Penerbitan Penawaran Harga B2B (Quotation / Permintaan Harga Partai Besar)",
+          "Keranjang Belanja & Checkout (Pilihan Pembayaran Transfer/PO Kontrak & Expedisi Cargo)",
+          "Pemrosesan Pesanan (Order Processing -> Packing Gudang -> Resi Pengiriman Cargo)",
+          "Invoice Faktur & Manajemen Riwayat Belanja Pelanggan"
+        ],
+        frontend: "React + Next.js",
+        frontendWhy: "SEO katalog sparepart berkinerja tinggi, pencarian part number cepat, & UI responsif.",
+        backend: "Node.js + Express",
+        backendWhy: "Efisien mengelola API transaksi, katalog sparepart multi-brand, & integrasi pembayaran.",
+        db: "PostgreSQL",
+        dbWhy: "Integritas relasional tinggi untuk relasi brand-part_number-quotation-order-invoice.",
+        orm: "Prisma",
+        ormWhy: "Type-safe schema untuk mengelola relasi kompleks katalog sparepart.",
+        scope: "Platform B2B E-Commerce & Katalog Sparepart Alat Berat multi-role (Pembeli/Kontraktor, Sales Representative, Admin Gudang, Toko Manager) yang mengintegrasikan pencarian part number OEM, penawaran harga B2B (quotation), checkout pesanan, manajemen stok per cabang, invoice faktur, dan status pengiriman cargo.",
+        rolesMarkdown: `* **Pembeli / Buyer (Kontraktor, Pemilik Fleet & Bengkel)**: Mencari sparepart presisi berdasarkan brand & nomor part OEM, menyimpan daftar armada, dan membuat PO / checkout order.
+* **Sales / Staff Penjualan**: Menerbitkan Penawaran Harga (Quotation B2B), memverifikasi pembayaran, dan membuatkan Invoice Faktur.
+* **Admin Gudang & Logistik**: Mengelola master part number, update stok gudang real-time, dan memproses pengiriman cargo.
+* **Manajer Toko / Pemilik**: Memantau omzet penjualan sparepart, produk terlaris per merk alat berat, dan laporan keuangan.`,
+        userStoriesMarkdown: `* Sebagai **Pembeli/Kontraktor**, saya ingin mencari sparepart berdasarkan merk alat berat (Komatsu/Caterpillar) dan part number agar menemukan suku cadang yang presisi.
+* Sebagai **Sales Rep**, saya ingin menerbitkan Quotation (Penawaran Harga) resmi untuk pembelian B2B partai besar.
+* Sebagai **Admin Gudang**, saya ingin memperbarui stok sparepart secara real-time agar tidak terjadi over-selling.`,
+        kpiMarkdown: `* Akurasi Pencarian Part Number & Filter Brand Alat Berat = 100%.
+* Conversion Rate Pencarian ke Pembelian Sparepart >= 15%.
+* Order Fulfillment Time < 24 jam dari Checkout hingga Pengiriman Cargo.`,
+        tables: [
+          { name: "users", columns: "id, email, password_hash, role, full_name, company_name, phone, status, created_at", description: "Pembeli B2B / Sales / Admin Gudang." },
+          { name: "brands", columns: "id, code, name, logo_url, country", description: "Merk alat berat (Caterpillar, Komatsu, Kobelco, Hitachi, Volvo, Hino, dll.)." },
+          { name: "spareparts", columns: "id, brand_id, part_number, oem_number, name, category, unit_price, is_oem, status", description: "Master katalog sparepart." },
+          { name: "part_compatibilities", columns: "id, sparepart_id, unit_model, engine_type, note", description: "Kesesuaian sparepart dengan tipe unit alat berat." },
+          { name: "inventory_stocks", columns: "id, sparepart_id, warehouse_name, qty_on_hand, min_stock", description: "Stok sparepart per lokasi gudang." },
+          { name: "quotations", columns: "id, quote_no, buyer_id, sales_id, total_amount, valid_until, status, created_at", description: "Penawaran harga resmi B2B." },
+          { name: "quotation_items", columns: "id, quotation_id, sparepart_id, qty, unit_price", description: "Detail rincian penawaran harga." },
+          { name: "orders", columns: "id, order_no, buyer_id, quotation_id, total_amount, payment_method, payment_status, shipping_status, created_at", description: "Pesanan transaksi sparepart." },
+          { name: "order_items", columns: "id, order_id, sparepart_id, qty, unit_price", description: "Rincian barang dalam pesanan." },
+          { name: "invoices", columns: "id, invoice_no, order_id, tax_amount, grand_total, due_date, status", description: "Faktur invoice tagihan." },
+          { name: "shipments", columns: "id, order_id, courier_name, tracking_no, status, shipped_at", description: "Pengiriman via ekspedisi/cargo." },
+          { name: "audit_logs", columns: "id, actor_id, action, entity, entity_id, meta, created_at", description: "Log audit perubahan harga & stok." }
+        ],
+        questions: [
+          "Apakah perlu fitur pencarian khusus berdasarkan OEM Part Number?",
+          "Apakah transaksi B2B menggunakan sistem Penawaran Harga (Quotation) sebelum checkout?",
+          "Apakah stok sparepart dipisahkan per lokasi gudang/cabang?"
+        ]
+      };
+    }
+
     // 1. Digital Archive & SOP / DMS Archetype
     if (
       arch === "ARCHIVE_SOP" ||
@@ -2428,7 +2492,7 @@ Output ONLY valid JSON (no markdown fences, no commentary):
 
   function formatTableRecommendations(tables) {
     if (!Array.isArray(tables) || tables.length === 0) return "";
-    let out = `\nDomain Schema Seed (${tables.length} tables/collections — EXPAND to production depth, target 15-29 entities like a real bank/CMMS system):\n`;
+    let out = `\nDomain Schema Seed (${tables.length} tables/collections — EXPAND to production depth matching the target domain): \n`;
     tables.forEach((tbl, i) => {
       out += `${i + 1}. "${tbl.name}" | columns: ${tbl.columns || "-"} | meaning: ${tbl.description || "-"}\n`;
     });
@@ -2442,12 +2506,12 @@ Output ONLY valid JSON (no markdown fences, no commentary):
 ## 1. Ringkasan Eksekutif
 ## 2. Definisi Domain & Masalah Operasional (jelaskan APA sistem ini di dunia nyata)
 ## 3. Visi & Tujuan Produk
-## 4. Target Persona / Role Nyata (minimal 4 role operasional domain, bukan hanya Admin)
+## 4. Target Persona / Role Nyata (minimal 4 role operasional/domain pengguna nyata, bukan hanya Admin)
 ## 5. Proses Bisnis Inti (5-10 langkah operasional)
 ## 6. User Stories & Acceptance Criteria (domain language)
 ## 7. Fitur Utama (P0/P1/P2) terikat proses bisnis
 ## 8. Alur Pengguna Utama (end-to-end domain flow)
-## 9. Metrik Kesuksesan / KPI domain (contoh CMMS: MTTR, PM compliance; bank: success rate transfer)
+## 9. Metrik Kesuksesan / KPI domain (gunakan KPI yang relevan dengan domain, misal E-Commerce: Conversion Rate & Fulfillment Time; SCM: Stock Accuracy; Finance: SLA & Latency)
 ## 10. Ruang Lingkup In/Out
 ## 11. Asumsi, Dependensi & Risiko
 WAJIB: sebutkan istilah domain yang tepat. DILARANG: "CRUD entitas utama" generik tanpa konteks.`,
@@ -3095,6 +3159,20 @@ GLOBAL RULES (MANDATORY):
       ? coreProcesses.map((p, i) => `${i + 1}. ${p}`).join("\n")
       : "1. Autentikasi multi-role\n2. Pencatatan aktivitas domain\n3. Workflow status\n4. Pelaporan & audit";
 
+    const rolesMarkdown = localSeed.rolesMarkdown || `* **Pembeli / Pelanggan**: Mencari katalog produk, membuat pesanan, dan melakukan transaksi.
+* **Sales / Staff Operasional**: Verifikasi pesanan, membuat penawaran/invoice, dan melayani pembeli.
+* **Admin Gudang & Logistik**: Mengelola master data, stok barang, dan proses pengiriman.
+* **Manajer / Administrator**: Memantau performa bisnis, omzet, dan konfigurasi sistem.`;
+
+    const userStoriesMarkdown = localSeed.userStoriesMarkdown || `* Sebagai **pengguna**, saya ingin mencari produk/layanan agar cepat menemukan barang yang presisi.
+* Sebagai **staff operasional**, saya ingin memproses pesanan/penawaran dengan cepat agar pelanggan puas.
+* Sebagai **manajer**, saya ingin melihat laporan omzet/performa untuk mengambil keputusan bisnis.`;
+
+    const kpiMarkdown = localSeed.kpiMarkdown || `* Akurasi katalog & pencarian = 100%.
+* Order Fulfillment / Processing Time < 24 jam.
+* Latency API p95 < 300ms untuk endpoint baca.
+* Uptime bulanan >= 99.5%.`;
+
     const primaryResources = tableList
       .map(t => t.name)
       .filter(n => !/^(users|roles|audit_logs|notifications|auth_tokens|devices)$/i.test(n))
@@ -3128,45 +3206,37 @@ ${domainDefinition}
 
 ${enrichedScope ? `### Ruang Lingkup Operasional\n${enrichedScope}\n` : ""}
 ## 3. Visi & Tujuan Produk
-* Menstandarkan pencatatan proses bisnis domain **${resolvedCategory}**.
-* Memberi visibilitas real-time bagi role operasional dan manajerial.
-* Menyediakan jejak audit dan laporan yang dapat diverifikasi.
+* Menstandarkan pencatatan dan transaksi proses bisnis domain **${resolvedCategory}**.
+* Memberi visibilitas real-time bagi pembeli, pengelola, dan manajemen.
+* Menyediakan jejak audit dan laporan transaksi yang akurat.
 
 ## 4. Target Pengguna & Persona (Domain)
-* **Role Operasional Lapangan**: Menjalankan proses harian domain (input, update status, lampiran).
-* **Planner / Supervisor**: Menjadwalkan, menugaskan, dan menyetujui alur kerja.
-* **Manager / Head**: Memantau KPI domain dan mengekspor laporan.
-* **Administrator Sistem**: Mengelola user, role, master data, dan konfigurasi.
+${rolesMarkdown}
 
 ## 5. Proses Bisnis Inti
 ${processMarkdown}
 
 ## 6. Fitur Utama (Prioritas)
 ### P0 (Wajib Fase 1)
-* Autentikasi JWT + RBAC per role domain.
-* Master data inti + workflow status entitas utama.
-* Dashboard KPI operasional domain.
-* Audit log aksi kritikal.
+* Autentikasi User & RBAC per role domain.
+* Master data produk & pencarian filter entitas utama.
+* Alur transaksi inti (pesanan, penawaran, invoice, atau workflow status).
+* Log transaksi & audit trail.
 
 ### P1
-* Notifikasi in-app / email pada transisi status.
+* Notifikasi transaksi in-app / email.
 * Export laporan PDF & Excel.
-* Filter, pencarian, pagination lanjutan.
+* Filter pencarian lanjutan & pagination.
 
 ### P2
-* Integrasi pihak ketiga domain.
-* Automasi workflow multi-level approval.
+* Integrasi payment gateway / ekspedisi cargo.
+* Analitik grafik & histori transaksi.
 
 ## 7. User Stories (Contoh Domain)
-* Sebagai **role operasional**, saya ingin mencatat aktivitas domain agar data akurat.
-* Sebagai **supervisor**, saya ingin menyetujui/menugaskan pekerjaan sesuai prioritas.
-* Sebagai **manager**, saya ingin melihat KPI dan mengunduh laporan periodik.
+${userStoriesMarkdown}
 
-## 8. Metrik Kesuksesan (KPI)
-* Latency API p95 < 300ms untuk endpoint baca.
-* Uptime bulanan >= 99.5%.
-* Task completion rate fitur inti >= 90% pada UAT.
-* Kepatuhan proses domain (status wajib terisi, audit lengkap).
+## 8. Metrik Kesuksesan (KPI Domain)
+${kpiMarkdown}
 
 ## 9. Ruang Lingkup
 * **In Scope**: Web app, API backend, skema ${dbEngine} (${tableCount} entitas inti), RBAC, reporting.
