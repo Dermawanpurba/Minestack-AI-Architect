@@ -2861,8 +2861,7 @@ GLOBAL RULES (MANDATORY):
                 content: `Sebelum menulis, pastikan Anda memahami domain "${project.category || project.name}" secara operasional. Lalu tuliskan dokumen '${docKey}' lengkap, detail, dan siap produksi untuk proyek "${project.name}". Hindari konten generik.`
               }
             ],
-            temperature: 0.3,
-            max_tokens: 3500
+            temperature: 0.3
           });
 
           if (response && response.ok) break;
